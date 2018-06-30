@@ -29,7 +29,7 @@
       <mat-icon *ngIf="!node.nodeState.collapsed">keyboard_arrow_down</mat-icon>
     </button>
     <!-- if no children then empty space in place of button -->
-    <span *ngIf="node.children==null">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+    <span style="width: 40px;" *ngIf="node.children==null"></span>
 
     <!-- radio button -->
     <mat-radio-button *ngIf="config.treeLevelConfig.select===SELECT_RADIO" [checked]="node.nodeState.checked===CHECKED" [value]="node"

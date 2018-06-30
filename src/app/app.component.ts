@@ -20,13 +20,16 @@ export class AppComponent {
   public INDETERMINATE = INDETERMINATE;
 
   config = new Config(new TreeLevelConfig(true, SELECT_CHECKBOX, true, true, true));
-  node = new Node("name", 1, [new Node("child", 1, null, false, new NodeState(), new NodeLevelConfig())], false, new NodeState(), new NodeLevelConfig());
+  nodes = [
+    new Node("name", 1, [new Node("child", 11, null, false, new NodeState(), new NodeLevelConfig())], false, new NodeState(), new NodeLevelConfig()),
+    new Node("name", 2, [new Node("child", 21, null, false, new NodeState(), new NodeLevelConfig())], false, new NodeState(), new NodeLevelConfig())
+  ];
   contextPrototype = SpTreeviewNodeTemplateContext.prototype;
 
   onLoadChildren(node: Node) {
     setTimeout(() => {
-      node.children = [new Node("child1", 1, null, false, new NodeState(), new NodeLevelConfig()),
-      new Node("child2", 2, null, false, new NodeState(), new NodeLevelConfig())];
+      node.children = [new Node("child1", 31, null, false, new NodeState(), new NodeLevelConfig()),
+      new Node("child2", 32, null, false, new NodeState(), new NodeLevelConfig())];
     }, 3000);
   }
 

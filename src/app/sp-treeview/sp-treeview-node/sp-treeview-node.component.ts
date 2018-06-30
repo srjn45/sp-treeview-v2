@@ -21,9 +21,10 @@ export class SpTreeviewNodeComponent implements OnInit {
 
   public hide = false;
 
+  @Input() public template: TemplateRef<SpTreeviewNodeTemplate>;
+  @Input() public contextPrototype: any;
   @Input() public node: Node;
   @Input() public config: Config = new Config();
-  @Input() public template: TemplateRef<SpTreeviewNodeTemplate>;
 
   @Output() public radioSelect: EventEmitter<Node[]> = new EventEmitter<Node[]>();
   @Output() public checkboxSelect: EventEmitter<Node[]> = new EventEmitter<Node[]>();
@@ -32,18 +33,19 @@ export class SpTreeviewNodeComponent implements OnInit {
   @Output() public addChild: EventEmitter<Node> = new EventEmitter<Node>();
   @Output() public loadChildren: EventEmitter<Node> = new EventEmitter<Node>();
 
-  public context: SpTreeviewNodeTemplate;
+  public context = new SpTreeviewNodeTemplateContext();
 
   constructor() {
 
   }
 
   ngOnInit() {
-    console.log(this.node);
-    console.log(this.config);
-    this.context = new SpTreeviewNodeTemplateContext();
+    // set input context prototype 
+    this.context = Object.setPrototypeOf(this.context, this.contextPrototype);
+    // input
     this.context.node = this.node;
     this.context.config = this.config;
+    // output
     this.context.addChild = this.addChild;
     this.context.delete = this.delete;
     this.context.loadChildren = this.loadChildren;

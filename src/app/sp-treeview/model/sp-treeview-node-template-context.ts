@@ -1,15 +1,13 @@
 import { SpTreeviewNodeTemplate } from "./sp-treeview-node-template";
-import { SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE, Config } from "./config";
-import { CHECKED, INDETERMINATE, Node, UNCHECKED } from "./node";
-import { Output, EventEmitter } from "@angular/core";
+import { Config } from "./config";
+import { CHECKED, Node, UNCHECKED } from "./node";
+import { EventEmitter } from "@angular/core";
 import { MatRadioChange, MatCheckboxChange } from "@angular/material";
 
 export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
 
-    public hide = false;
-
-    public node: Node;
-    public config: Config = new Config();
+    node: Node;
+    config: Config = new Config();
 
     radioSelect: EventEmitter<Node[]>;
     checkboxSelect: EventEmitter<Node[]>;
@@ -19,11 +17,6 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
 
     constructor() {
 
-    }
-
-    ngOnInit() {
-        console.log(this.node);
-        console.log(this.config);
     }
 
     onCollapseExpand = (node: Node) => {

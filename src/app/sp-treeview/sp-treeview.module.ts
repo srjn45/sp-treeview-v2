@@ -1,7 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SpTreeviewNodeComponent } from './sp-treeview-node/sp-treeview-node.component';
-import { MatProgressBarModule, MatCheckboxModule, MatRadioModule, MatButtonModule, MatIconModule } from '@angular/material';
+import { MatProgressBarModule, MatCheckboxModule, MatRadioModule, MatButtonModule, MatIconModule, MatInputModule, MatFormFieldModule } from '@angular/material';
+import { SpTreeviewComponent } from './sp-treeview/sp-treeview.component';
 
 @NgModule({
   imports: [
@@ -10,11 +11,13 @@ import { MatProgressBarModule, MatCheckboxModule, MatRadioModule, MatButtonModul
     MatCheckboxModule,
     MatRadioModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    MatInputModule,
+    MatFormFieldModule
   ],
-  declarations: [SpTreeviewNodeComponent],
+  declarations: [SpTreeviewNodeComponent, SpTreeviewComponent],
   exports: [
-    SpTreeviewNodeComponent
+    SpTreeviewComponent
   ]
 })
 export class SpTreeviewModule { }

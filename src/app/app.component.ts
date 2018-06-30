@@ -29,7 +29,7 @@ export class AppComponent {
   onLoadChildren(node: Node) {
     setTimeout(() => {
       node.children = [new Node("child1", 31, null, false, new NodeState(), new NodeLevelConfig()),
-      new Node("child2", 32, null, false, new NodeState(), new NodeLevelConfig())];
+      new Node("child2", 32, [], false, new NodeState(), new NodeLevelConfig())];
     }, 3000);
   }
 

@@ -90,6 +90,7 @@ export class Node {
 
 
     public verifyStateRecursive() {
+        console.log(this.nodeState.checked);
         if (this.children == null) {
             return;
         }
@@ -117,7 +118,7 @@ export class Node {
     }
 
     public checkImmediateChildren() {
-        if (this.children) {
+        if (this.children && this.children.length > 0) {
             this.children.forEach(c => c.checkImmediateChildren());
 
             let checkedChildren: number = this.children.filter(n => n.nodeState.checked === CHECKED).length;
@@ -165,7 +166,7 @@ export class Node {
 export class NodeState {
     constructor(
         private _checked = UNCHECKED,
-        private _collapsed = false,
+        private _collapsed = true,
         private _disabled = false
     ) { }
 

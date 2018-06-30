@@ -2,7 +2,7 @@ import { Component, OnInit, Input, Output, TemplateRef, EventEmitter } from '@an
 import { Config, SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE } from '../model/config';
 import { SpTreeviewNodeTemplate } from '../model/sp-treeview-node-template';
 import { Node, CHECKED, INDETERMINATE, UNCHECKED } from '../model/node';
-import { MatRadioChange, MatCheckboxChange } from '@angular/material';
+import { SpTreeviewNodeTemplateContext } from '../model/sp-treeview-node-template-context';
 
 @Component({
   selector: 'sp-treeview-node',
@@ -16,6 +16,7 @@ export class SpTreeviewNodeComponent implements OnInit {
   public SELECT_NONE = SELECT_NONE;
 
   public CHECKED = CHECKED;
+  public UNCHECKED = UNCHECKED;
   public INDETERMINATE = INDETERMINATE;
 
   public hide = false;
@@ -24,16 +25,14 @@ export class SpTreeviewNodeComponent implements OnInit {
   @Input() public config: Config = new Config();
   @Input() public template: TemplateRef<SpTreeviewNodeTemplate>;
 
-  // @Output() public checkChange: EventEmitter<Node> = new EventEmitter<Node>();
-
   @Output() public radioSelect: EventEmitter<Node[]> = new EventEmitter<Node[]>();
-
   @Output() public checkboxSelect: EventEmitter<Node[]> = new EventEmitter<Node[]>();
-
 
   @Output() public delete: EventEmitter<Node> = new EventEmitter<Node>();
   @Output() public addChild: EventEmitter<Node> = new EventEmitter<Node>();
   @Output() public loadChildren: EventEmitter<Node> = new EventEmitter<Node>();
+
+  public context: SpTreeviewNodeTemplate;
 
   constructor() {
 
@@ -42,18 +41,14 @@ export class SpTreeviewNodeComponent implements OnInit {
   ngOnInit() {
     console.log(this.node);
     console.log(this.config);
-  }
-
-  onCollapseExpand = (node: Node) => {
-    console.log("collapsed/expand");
-    if (node.nodeState.collapsed) {
-      if (this.config.treeLevelConfig.lazyLoad) {
-        node.progress = true;
-        this.loadChildren.emit(node);
-        return;
-      }
-    }
-    node.nodeState.collapsed = !node.nodeState.collapsed;
+    this.context = new SpTreeviewNodeTemplateContext();
+    this.context.node = this.node;
+    this.context.config = this.config;
+    this.context.addChild = this.addChild;
+    this.context.delete = this.delete;
+    this.context.loadChildren = this.loadChildren;
+    this.context.checkboxSelect = this.checkboxSelect;
+    this.context.radioSelect = this.radioSelect;
   }
 
   onDelete = (node: Node) => {
@@ -68,25 +63,11 @@ export class SpTreeviewNodeComponent implements OnInit {
     this.loadChildren.emit(node);
   }
 
-  onRadioChange = (event: MatRadioChange) => {
-    console.log(event);
+  onRadioChange(nodes: Node[]) {
+    this.radioSelect.emit(nodes);
   }
 
-  /**
-   * called when the checkbox value is changed
-   * sets checked value recursively
-   */
-  onCheckChange = (event: MatCheckboxChange) => {
-    console.log(event);
-    // set new check status for this node and its children
-    this.node.nodeState.checked = event.checked ? CHECKED : UNCHECKED;
-    this.node.changeChildrenRecursive();
-
-    // notify parent of the change
-    this.checkboxSelect.emit(this.node.getCheckedValues(this.config.treeLevelConfig.checkedValue));
-  }
-
-  childCheckboxSelected(values: any[]) {
+  onCheckChange(nodes: Node[]) {
     this.node.checkImmediateChildren();
     this.checkboxSelect.emit(this.node.getCheckedValues(this.config.treeLevelConfig.checkedValue));
   }

@@ -1,0 +1,45 @@
+.node-base {
+    position: relative;
+}
+
+.node-child {
+    position: relative;
+    margin-left: 30px;
+    overflow: hidden;
+}
+
+.tree-node {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.hide {
+    display: none;
+}
+
+.slideUp {
+    height: 0px !important;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+* {
+    transition: all 0.3s !important;
+}
+
+.btn-small {
+    width: 24px !important;
+    height: 24px !important;
+    line-height: 24px !important;
+}
+
+.icon-small {
+    font-size: 22px !important;
+    line-height: 22px !important;
+}

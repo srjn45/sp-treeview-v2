@@ -41,4 +41,8 @@ export class AppComponent {
     console.log("AddChild" + JSON.stringify(node));
   }
 
+  onChange(nodes: Node[]) {
+    console.log(nodes);
+  }
+
 }

@@ -1,5 +1,5 @@
-<sp-treeview  [nodes]="nodes" [config]="config" (delete)="onDelete($event)"
-  (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)">
+<sp-treeview [nodes]="nodes" [config]="config" (delete)="onDelete($event)" (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)"
+  (change)="onChange($event)">
 </sp-treeview>
 
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">

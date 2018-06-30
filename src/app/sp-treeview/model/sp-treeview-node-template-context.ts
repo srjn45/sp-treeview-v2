@@ -58,7 +58,7 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
         this.node.changeChildrenRecursive();
 
         // notify parent of the change
-        this.checkboxSelect.emit(this.node.getCheckedValues(this.config.treeLevelConfig.checkedValue));
+        this.checkboxSelect.emit(this.node.getCheckedValues());
     }
 
 }

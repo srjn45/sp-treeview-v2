@@ -2,11 +2,6 @@ export const SELECT_NONE = 0;
 export const SELECT_CHECKBOX = 1;
 export const SELECT_RADIO = 2;
 
-export const CHECKED_VALUE_ALL = 0;
-export const CHECKED_VALUE_LEAVES = 1;
-export const CHECKED_VALUE_PARENT = 2;
-
-
 export class Config {
     constructor(
         private _treeLevelConfig = new TreeLevelConfig(),
@@ -66,7 +61,6 @@ export class TreeLevelConfig {
         // if lazyLoad then make service call for children
         private _lazyLoad = false,
         private _select = SELECT_NONE,
-        private _checkedValue = CHECKED_VALUE_LEAVES,
         private _search = true,
         private _deleteNode = false,
         private _addChild = false
@@ -86,14 +80,6 @@ export class TreeLevelConfig {
 
     set select(select: number) {
         this._select = select;
-    }
-
-    get checkedValue(): number {
-        return this._checkedValue;
-    }
-
-    set checkedValue(checkedValue: number) {
-        this._select = checkedValue;
     }
 
     get search(): boolean {

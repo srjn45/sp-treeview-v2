@@ -71,7 +71,7 @@ export class SpTreeviewNodeComponent implements OnInit {
 
   onCheckChange(nodes: Node[]) {
     this.node.checkImmediateChildren();
-    this.checkboxSelect.emit(this.node.getCheckedValues(this.config.treeLevelConfig.checkedValue));
+    this.checkboxSelect.emit(this.node.getCheckedValues());
   }
 
 }

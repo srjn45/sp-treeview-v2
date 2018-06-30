@@ -1,4 +1,4 @@
-import { NodeLevelConfig, CHECKED_VALUE_PARENT, CHECKED_VALUE_LEAVES } from "./config";
+import { NodeLevelConfig } from "./config";
 
 export const CHECKED = 1;
 export const UNCHECKED = 0;
@@ -54,6 +54,7 @@ export class Node {
         this._children = children;
         this._progress = false;
         this._nodeState.collapsed = false;
+        this.verifyStateRecursive();
     }
 
     get progress(): boolean {
@@ -142,63 +143,18 @@ export class Node {
         }
     }
 
-    private checkedLeaves(): Node[] {
-        if (this.nodeState.checked === UNCHECKED) {
-            return [];
-        }
-        if (this.children) {
-            let values = [];
-            this.children.forEach(n => {
-                n.checkedLeaves().forEach(v => values.push(v));
-            });
-            return values;
-        } else {
-            return [this];
-        }
-    }
-
-    private checkedAll(): Node[] {
-        if (this.nodeState.checked === CHECKED || this.nodeState.checked === INDETERMINATE) {
-            if (this.children) {
-                let values = [];
-                if (this.nodeState.checked === CHECKED) {
-                    values.push(this);
-                }
-                this.children.forEach(n => {
-                    n.checkedAll().forEach(v => values.push(v));
-                });
-                return values;
-            } else {
-                return [this];
-            }
-        } else {
-            return [];
-        }
-    }
-
-    private checkedHighest(): Node[] {
+    public getCheckedValues(): Node[] {
         if (this.nodeState.checked === CHECKED) {
             return [this]
         }
         if (this.children) {
             let values = [];
             this.children.forEach(n => {
-                n.checkedHighest().forEach(v => values.push(v));
+                n.getCheckedValues().forEach(v => values.push(v));
             });
             return values;
         }
         return [];
-    }
-
-    public getCheckedValues(checkedValue: number): Node[] {
-        if (checkedValue === CHECKED_VALUE_PARENT) {
-            return this.checkedHighest();
-        } else if (checkedValue === CHECKED_VALUE_LEAVES) {
-            return this.checkedLeaves();
-        } else {
-            // selected values all
-            return this.checkedAll();
-        }
     }
 
 }

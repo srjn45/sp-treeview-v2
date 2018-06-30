@@ -3,6 +3,7 @@ import { NgModule } from '@angular/core';
 import { MatProgressBarModule } from "@angular/material";
 
 import { AppComponent } from './app.component';
+import { SpTreeviewModule } from './sp-treeview/sp-treeview.module';
 
 
 @NgModule({
@@ -11,7 +12,8 @@ import { AppComponent } from './app.component';
   ],
   imports: [
     BrowserModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    SpTreeviewModule
   ],
   providers: [],
   bootstrap: [AppComponent]

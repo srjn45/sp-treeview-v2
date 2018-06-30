@@ -74,41 +74,7 @@ export class SpTreeviewNodeComponent implements OnInit {
   }
 
   search(text: string): boolean {
-    return this.filter(this.node, text);
+    return this.node.filter(text, this.config, this.loadChildren);
   }
-
-  filter(node: Node, text: string): boolean {
-    if (node.children == null) {
-      if (node.name.toLowerCase().startsWith(text.toLowerCase())) {
-        node.nodeState.hidden = false;
-        return true;
-      } else {
-        node.nodeState.hidden = true;
-        return false;
-      }
-    } else {
-      let matchFound = false;
-      node.children.forEach(child => {
-        let childMatchFound = this.filter(child, text);
-        if (!matchFound) {
-          matchFound = childMatchFound;
-        }
-      });
-      if (matchFound) {
-        node.nodeState.hidden = false;
-        node.nodeState.collapsed = false;
-        return true;
-      } else {
-        if (node.name.toLowerCase().startsWith(text.toLowerCase())) {
-          node.nodeState.hidden = false;
-          return true;
-        } else {
-          node.nodeState.hidden = true;
-          return false;
-        }
-      }
-    }
-  }
-
 
 }

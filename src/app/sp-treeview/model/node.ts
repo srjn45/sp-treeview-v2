@@ -1,4 +1,5 @@
-import { NodeLevelConfig } from "./config";
+import { NodeLevelConfig, Config } from "./config";
+import { EventEmitter } from "@angular/core";
 
 export const CHECKED = 1;
 export const UNCHECKED = 0;
@@ -18,6 +19,9 @@ export class Node {
         }
         return node;
     }
+
+    private config: Config;
+    private loadChildren: EventEmitter<Node>;
 
     constructor(
         private _name: string,
@@ -55,6 +59,9 @@ export class Node {
         this._progress = false;
         this._nodeState.collapsed = false;
         this.verifyStateRecursive();
+        if (this.config != null && this.loadChildren != null) {
+            this.filter(this.config.treeLevelConfig.searchStr, this.config, this.loadChildren);
+        }
     }
 
     get progress(): boolean {
@@ -90,7 +97,6 @@ export class Node {
 
 
     public verifyStateRecursive() {
-        console.log(this.nodeState.checked);
         if (this.children == null) {
             return;
         }
@@ -106,12 +112,10 @@ export class Node {
     }
 
     public changeChildrenRecursive() {
-        console.log(this.name + this.nodeState.checked);
         if (this.children == null) {
             return;
         }
         this.children.forEach(n => {
-            console.log(n);
             n.nodeState.checked = this.nodeState.checked;
             n.changeChildrenRecursive();
         });
@@ -156,6 +160,45 @@ export class Node {
             return values;
         }
         return [];
+    }
+
+    filter(text: string, config: Config, loadChildren: EventEmitter<Node>): boolean {
+        this.config = config;
+        this.loadChildren = loadChildren;
+        if (this.children == null) {
+            if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
+                this.nodeState.hidden = false;
+                return true;
+            } else {
+                this.nodeState.hidden = true;
+                return false;
+            }
+        } else {
+            if (config.treeLevelConfig.lazyLoad && this.children.length == 0) {
+                this.progress = true;
+                loadChildren.emit(this);
+            }
+            let matchFound = false;
+            this.children.forEach(child => {
+                let childMatchFound = child.filter(text, config, loadChildren);
+                if (!matchFound) {
+                    matchFound = childMatchFound;
+                }
+            });
+            if (matchFound) {
+                this.nodeState.hidden = false;
+                this.nodeState.collapsed = false;
+                return true;
+            } else {
+                if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
+                    this.nodeState.hidden = false;
+                    return true;
+                } else {
+                    this.nodeState.hidden = true;
+                    return false;
+                }
+            }
+        }
     }
 
 }

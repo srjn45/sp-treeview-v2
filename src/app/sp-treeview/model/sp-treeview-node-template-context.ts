@@ -52,7 +52,6 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
      * sets checked value recursively
      */
     onCheckChange = (event: MatCheckboxChange) => {
-        console.log(event);
         // set new check status for this node and its children
         this.node.nodeState.checked = event.checked ? CHECKED : UNCHECKED;
         this.node.changeChildrenRecursive();

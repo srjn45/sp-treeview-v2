@@ -61,9 +61,11 @@ export class TreeLevelConfig {
         // if lazyLoad then make service call for children
         private _lazyLoad = false,
         private _select = SELECT_NONE,
-        private _search = true,
         private _deleteNode = false,
-        private _addChild = false
+        private _addChild = false,
+        private _search = true,
+        private _progress = false,
+        private _searchStr = ''
     ) { }
 
     get lazyLoad(): boolean {
@@ -88,6 +90,22 @@ export class TreeLevelConfig {
 
     set search(search: boolean) {
         this._search = search;
+    }
+
+    get searchStr(): string {
+        return this._searchStr;
+    }
+
+    set searchStr(searchStr: string) {
+        this._searchStr = searchStr;
+    }
+
+    get progress(): boolean {
+        return this._progress;
+    }
+
+    set progress(progress: boolean) {
+        this._progress = progress;
     }
 
     get deleteNode(): boolean {

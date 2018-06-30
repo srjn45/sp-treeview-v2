@@ -33,3 +33,11 @@ mat-form-field {
     font-size: 22px !important;
     line-height: 22px !important;
 }
+
+::ng-deep .mat-input-wrapper.mat-form-field-wrapper {
+    padding-bottom: 0px;
+}
+
+::ng-deep .mat-form-field-underline {
+    bottom: 0px !important;
+}

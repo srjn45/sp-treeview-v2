@@ -1,14 +1,15 @@
 <div class="treeview-base">
   <div class="treeview-header">
     <mat-form-field *ngIf="config.treeLevelConfig.search">
-      <input #search matInput placeholder="Search" (keyup)="onFilter($event)">
+      <input #search matInput placeholder="Search" (keyup)="onSearch($event)">
       <button type="button" mat-button mat-icon-button matPrefix color="primary">
         <mat-icon>search</mat-icon>
       </button>
-      <button type="button" mat-button mat-icon-button matSuffix color="warn" (click)="$event.stopPropagation();filter.value=null;applyFilter('')">
+      <button type="button" mat-button mat-icon-button matSuffix color="warn" (click)="$event.stopPropagation();search.value=null;applySearch('')">
         <mat-icon>close</mat-icon>
       </button>
     </mat-form-field>
+    <mat-progress-bar *ngIf="config.treeLevelConfig.progress" mode="indeterminate"></mat-progress-bar>
   </div>
   <div class="treeview-content">
     <mat-radio-group>

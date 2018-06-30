@@ -46,11 +46,16 @@ export class SpTreeviewComponent implements OnInit {
     return values;
   }
 
-  onFilter(event: Event) {
-    this.applyFilter((<HTMLInputElement>event.srcElement).value);
+  onSearch(event: Event) {
+    let str = (<HTMLInputElement>event.srcElement).value;
+    this.applySearch(str);
   }
-  applyFilter(text: string) {
-    this.trees.forEach(t => t.search(text));
+
+  applySearch(str: string) {
+    this.config.treeLevelConfig.searchStr = str;
+    this.config.treeLevelConfig.progress = true;
+    this.trees.forEach(t => t.search(str));
+    this.config.treeLevelConfig.progress = false;
   }
 
   onChange(nodes: Node[]) {

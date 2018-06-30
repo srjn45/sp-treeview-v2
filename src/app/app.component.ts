@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { Node, NodeState, CHECKED, UNCHECKED, INDETERMINATE } from './sp-treeview/model/node';
 import { Config, TreeLevelConfig, SELECT_CHECKBOX, NodeLevelConfig, SELECT_RADIO, SELECT_NONE } from './sp-treeview/model/config';
 import { SpTreeviewNodeTemplateContext } from './sp-treeview/model/sp-treeview-node-template-context';
+import { SpTreeviewComponent } from './sp-treeview/sp-treeview/sp-treeview.component';
 
 @Component({
   selector: 'app-root',
@@ -44,5 +45,4 @@ export class AppComponent {
   onChange(nodes: Node[]) {
     console.log(nodes);
   }
-
 }

@@ -1,7 +1,7 @@
 <div class="treeview-base">
   <div class="treeview-header">
-    <mat-form-field *ngIf="config.filter">
-      <input #search matInput placeholder="Filter" (keyup)="onFilter($event)">
+    <mat-form-field *ngIf="config.treeLevelConfig.search">
+      <input #search matInput placeholder="Search" (keyup)="onFilter($event)">
       <button type="button" mat-button mat-icon-button matPrefix color="primary">
         <mat-icon>search</mat-icon>
       </button>

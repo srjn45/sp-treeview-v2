@@ -9,9 +9,25 @@ export const CHECKED_VALUE_PARENT = 2;
 
 export class Config {
     constructor(
-        public treeLevelConfig = new TreeLevelConfig(),
-        public dropdownLevelConfig = new DropdownLevelConfig()
+        private _treeLevelConfig = new TreeLevelConfig(),
+        private _dropdownLevelConfig = new DropdownLevelConfig()
     ) { }
+
+    get treeLevelConfig() {
+        return this._treeLevelConfig;
+    }
+
+    set treeLevelConfig(treeLevelConfig) {
+        this._treeLevelConfig = treeLevelConfig;
+    }
+
+    get dropdownLevelConfig() {
+        return this._dropdownLevelConfig;
+    }
+
+    set dropdownLevelConfig(dropdownLevelConfig) {
+        this._dropdownLevelConfig = dropdownLevelConfig;
+    }
 }
 
 
@@ -20,9 +36,26 @@ export class Config {
  */
 export class DropdownLevelConfig {
     constructor(
-        public height = 'auto',
-        public showDropdownDefault = false
+        private _height = 'auto',
+        private _showDropdownDefault = false
     ) { }
+
+    get height() {
+        return this._height;
+    }
+
+    set height(height) {
+        this._height = height;
+    }
+
+    get showDropdownDefault() {
+        return this._showDropdownDefault;
+    }
+
+    set showDropdownDefault(showDropdownDefault) {
+        this._showDropdownDefault = showDropdownDefault;
+    }
+
 }
 
 /**
@@ -31,13 +64,62 @@ export class DropdownLevelConfig {
 export class TreeLevelConfig {
     constructor(
         // if lazyLoad then make service call for children
-        public lazyLoad = false,
-        public select = SELECT_NONE,
-        public checkedValue = CHECKED_VALUE_LEAVES,
-        public search = true,
-        public deleteNode = false,
-        public addChild = false
+        private _lazyLoad = false,
+        private _select = SELECT_NONE,
+        private _checkedValue = CHECKED_VALUE_LEAVES,
+        private _search = true,
+        private _deleteNode = false,
+        private _addChild = false
     ) { }
+
+    get lazyLoad() {
+        return this._lazyLoad;
+    }
+
+    set lazyLoad(lazyLoad) {
+        this._lazyLoad = lazyLoad;
+    }
+
+    get select() {
+        return this._select;
+    }
+
+    set select(select) {
+        this._select = select;
+    }
+
+    get checkedValue() {
+        return this._checkedValue;
+    }
+
+    set checkedValue(checkedValue) {
+        this._select = checkedValue;
+    }
+
+    get search() {
+        return this._search;
+    }
+
+    set search(search) {
+        this._search = search;
+    }
+
+    get deleteNode() {
+        return this._deleteNode;
+    }
+
+    set deleteNode(deleteNode) {
+        this._deleteNode = deleteNode;
+    }
+
+    get addChild() {
+        return this._addChild;
+    }
+
+    set addChild(addChild) {
+        this._addChild = addChild;
+    }
+
 }
 
 

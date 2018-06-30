@@ -54,49 +54,23 @@ export class SpTreeviewComponent implements OnInit {
   }
 
   onChange(nodes: Node[]) {
-    console.log(nodes);
-    this.change.emit(nodes);
-    // if (this.config.treeLevelConfig.select === SELECT_CHECKBOX) {
-    //   let values = [];
-    //   this.trees.forEach(t => {
-    //     t.getCheckedValues().forEach(v => values.push(v))
-    //   });
-    //   this.change.emit(values);
-    // } else if (this.config.select === SELECT_RADIO) {
-    //   this.change.emit(nodes);
-    // }
+    if (this.config.treeLevelConfig.select === SELECT_CHECKBOX) {
+      let values = [];
+      this.trees.forEach(t => {
+        t.node.getCheckedValues().forEach(v => values.push(v))
+      });
+      this.change.emit(values);
+    } else if (this.config.treeLevelConfig.select === SELECT_RADIO) {
+      this.change.emit(nodes);
+    }
   }
 
   onDelete(node) {
-    console.log(node);
     this.delete.emit(node);
-    // if (this.nodes != null) {
-    //   let index = this.nodes.findIndex(x => x.value === node.value);
-    //   if (index !== -1) {
-    //     this.nodes.splice(index, 1);
-    //   }
-    // }
-    // this.delete.emit(node);
-
-    // let values = [];
-    // this.trees.forEach(t => {
-    //   t.getCheckedValues().forEach(v => values.push(v))
-    // });
-    // this.change.emit(values);
   }
 
   onAddChild(node: Node) {
-    console.log(node);
     this.addChild.emit(node);
-    // this.addChild.emit(node);
-
-    // let values = [];
-    // this.trees.forEach(t => {
-    //   t.node.verifyChildrenRecursive();
-    //   t.getCheckedValues().forEach(v => values.push(v));
-    // });
-    // this.change.emit(values);
-
   }
 
   onLoadChildren(node: Node) {

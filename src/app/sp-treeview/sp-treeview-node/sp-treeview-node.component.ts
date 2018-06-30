@@ -19,10 +19,9 @@ export class SpTreeviewNodeComponent implements OnInit {
   public UNCHECKED = UNCHECKED;
   public INDETERMINATE = INDETERMINATE;
 
-  public hide = false;
-
   @Input() public template: TemplateRef<SpTreeviewNodeTemplate>;
   @Input() public contextPrototype: any;
+
   @Input() public node: Node;
   @Input() public config: Config = new Config();
 
@@ -73,5 +72,43 @@ export class SpTreeviewNodeComponent implements OnInit {
     this.node.checkImmediateChildren();
     this.checkboxSelect.emit(this.node.getCheckedValues());
   }
+
+  search(text: string): boolean {
+    return this.filter(this.node, text);
+  }
+
+  filter(node: Node, text: string): boolean {
+    if (node.children == null) {
+      if (node.name.toLowerCase().startsWith(text.toLowerCase())) {
+        node.nodeState.hidden = false;
+        return true;
+      } else {
+        node.nodeState.hidden = true;
+        return false;
+      }
+    } else {
+      let matchFound = false;
+      node.children.forEach(child => {
+        let childMatchFound = this.filter(child, text);
+        if (!matchFound) {
+          matchFound = childMatchFound;
+        }
+      });
+      if (matchFound) {
+        node.nodeState.hidden = false;
+        node.nodeState.collapsed = false;
+        return true;
+      } else {
+        if (node.name.toLowerCase().startsWith(text.toLowerCase())) {
+          node.nodeState.hidden = false;
+          return true;
+        } else {
+          node.nodeState.hidden = true;
+          return false;
+        }
+      }
+    }
+  }
+
 
 }

@@ -167,7 +167,8 @@ export class NodeState {
     constructor(
         private _checked = UNCHECKED,
         private _collapsed = true,
-        private _disabled = false
+        private _disabled = false,
+        private _hidden = false
     ) { }
 
     get checked(): number {
@@ -192,5 +193,13 @@ export class NodeState {
 
     set disabled(disabled: boolean) {
         this._disabled = disabled;
+    }
+
+    get hidden(): boolean {
+        return this._hidden;
+    }
+
+    set hidden(hidden: boolean) {
+        this._hidden = hidden;
     }
 }

@@ -50,7 +50,7 @@ export class SpTreeviewComponent implements OnInit {
     this.applyFilter((<HTMLInputElement>event.srcElement).value);
   }
   applyFilter(text: string) {
-    // this.trees.forEach(t => t.search(text));
+    this.trees.forEach(t => t.search(text));
   }
 
   onChange(nodes: Node[]) {

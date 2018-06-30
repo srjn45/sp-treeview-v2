@@ -13,19 +13,19 @@ export class Config {
         private _dropdownLevelConfig = new DropdownLevelConfig()
     ) { }
 
-    get treeLevelConfig() {
+    get treeLevelConfig(): TreeLevelConfig {
         return this._treeLevelConfig;
     }
 
-    set treeLevelConfig(treeLevelConfig) {
+    set treeLevelConfig(treeLevelConfig: TreeLevelConfig) {
         this._treeLevelConfig = treeLevelConfig;
     }
 
-    get dropdownLevelConfig() {
+    get dropdownLevelConfig(): DropdownLevelConfig {
         return this._dropdownLevelConfig;
     }
 
-    set dropdownLevelConfig(dropdownLevelConfig) {
+    set dropdownLevelConfig(dropdownLevelConfig: DropdownLevelConfig) {
         this._dropdownLevelConfig = dropdownLevelConfig;
     }
 }
@@ -40,19 +40,19 @@ export class DropdownLevelConfig {
         private _showDropdownDefault = false
     ) { }
 
-    get height() {
+    get height(): string {
         return this._height;
     }
 
-    set height(height) {
+    set height(height: string) {
         this._height = height;
     }
 
-    get showDropdownDefault() {
+    get showDropdownDefault(): boolean {
         return this._showDropdownDefault;
     }
 
-    set showDropdownDefault(showDropdownDefault) {
+    set showDropdownDefault(showDropdownDefault: boolean) {
         this._showDropdownDefault = showDropdownDefault;
     }
 
@@ -72,51 +72,51 @@ export class TreeLevelConfig {
         private _addChild = false
     ) { }
 
-    get lazyLoad() {
+    get lazyLoad(): boolean {
         return this._lazyLoad;
     }
 
-    set lazyLoad(lazyLoad) {
+    set lazyLoad(lazyLoad: boolean) {
         this._lazyLoad = lazyLoad;
     }
 
-    get select() {
+    get select(): number {
         return this._select;
     }
 
-    set select(select) {
+    set select(select: number) {
         this._select = select;
     }
 
-    get checkedValue() {
+    get checkedValue(): number {
         return this._checkedValue;
     }
 
-    set checkedValue(checkedValue) {
+    set checkedValue(checkedValue: number) {
         this._select = checkedValue;
     }
 
-    get search() {
+    get search(): boolean {
         return this._search;
     }
 
-    set search(search) {
+    set search(search: boolean) {
         this._search = search;
     }
 
-    get deleteNode() {
+    get deleteNode(): boolean {
         return this._deleteNode;
     }
 
-    set deleteNode(deleteNode) {
+    set deleteNode(deleteNode: boolean) {
         this._deleteNode = deleteNode;
     }
 
-    get addChild() {
+    get addChild(): boolean {
         return this._addChild;
     }
 
-    set addChild(addChild) {
+    set addChild(addChild: boolean) {
         this._addChild = addChild;
     }
 
@@ -128,7 +128,21 @@ export class TreeLevelConfig {
  */
 export class NodeLevelConfig {
     constructor(
-        public deleteNode?: boolean,
-        public addChild?: boolean
+        private _deleteNode?: boolean,
+        private _addChild?: boolean
     ) { }
+
+    get deleteNode(): boolean {
+        return this._deleteNode;
+    }
+    set deleteNode(deleteNode: boolean) {
+        this._deleteNode = deleteNode;
+    }
+
+    get addChild(): boolean {
+        return this._addChild;
+    }
+    set addChild(addChild: boolean) {
+        this._addChild = addChild;
+    }
 }

@@ -11,6 +11,6 @@ export interface SpTreeviewNodeTemplate {
     onRadioChange: () => void;
     onDelete: () => void;
     onAddChild: () => void;
-    onLoadChild: () => void;
+    onLoadChildren: () => void;
 
 }

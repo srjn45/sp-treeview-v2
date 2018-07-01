@@ -1,6 +1,6 @@
 {
   "name": "sp-treeview-v2",
-  "version": "2.0.0",
+  "version": "2.0.6",
   "repository": {
     "type": "git",
     "url": "https://github.com/srjn45/sp-treeview"
@@ -15,6 +15,7 @@
     "tree",
     "hierarchy",
     "dropdown",
+    "overlay",
     "angular4",
     "angular5"
   ],
@@ -27,7 +28,9 @@
   "jsnext:main": "sp-treeview.js",
   "typings": "sp-treeview.d.ts",
   "peerDependencies": {
-    "@angular/core": "^4.0.0",
+    "@angular/core": "^5.2.0",
+    "@angular/material": "^5.2.4",
+    "@angular/cdk": "^5.2.4",
     "rxjs": "^5.1.0",
     "zone.js": "^0.8.4"
   }

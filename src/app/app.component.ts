@@ -1,7 +1,9 @@
 import { Component } from '@angular/core';
-import { Node, CHECKED, UNCHECKED, INDETERMINATE } from './sp-treeview/model/node';
-import { Config, TreeLevelConfig, SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE } from './sp-treeview/model/config';
+import { Node } from './sp-treeview/model/node';
+import { Config } from './sp-treeview/model/config';
 import { SpTreeviewNodeTemplateContext } from './sp-treeview/model/sp-treeview-node-template-context';
+import { TreeLevelConfig, SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE } from './sp-treeview/model/tree-level-config';
+import { CHECKED, UNCHECKED, INDETERMINATE } from './sp-treeview/model/node-state';
 
 @Component({
   selector: 'app-root',

@@ -1,8 +1,9 @@
 import { Component, OnInit, Input, EventEmitter, Output, ViewChild, TemplateRef } from '@angular/core';
 import { Config } from '../model/config';
-import { Node, UNCHECKED } from '../model/node';
+import { Node } from '../model/node';
 import { SpTreeviewComponent } from '../sp-treeview/sp-treeview.component';
 import { SpTreeviewNodeTemplate } from '../model/sp-treeview-node-template';
+import { UNCHECKED } from '../model/node-state';
 
 @Component({
   selector: 'sp-treeview-overlay',

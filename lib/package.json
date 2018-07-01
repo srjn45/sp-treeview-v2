@@ -1,6 +1,6 @@
 {
-  "name": "sp-treeview",
-  "version": "0.1.1",
+  "name": "sp-treeview-v2",
+  "version": "2.0.0",
   "scripts": {
     "build": "gulp build",
     "build:watch": "gulp",
@@ -27,7 +27,7 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/srjn45/sp-treeview/issues"
+    "url": "https://github.com/srjn45/sp-treeview-v2/issues"
   },
   "devDependencies": {
     "@angular/common": "^5.0.0",

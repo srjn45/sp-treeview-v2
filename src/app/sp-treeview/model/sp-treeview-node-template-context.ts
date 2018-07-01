@@ -1,8 +1,9 @@
 import { SpTreeviewNodeTemplate } from "./sp-treeview-node-template";
 import { Config } from "./config";
-import { CHECKED, Node, UNCHECKED } from "./node";
+import { Node } from "./node";
 import { EventEmitter } from "@angular/core";
 import { MatRadioChange, MatCheckboxChange } from "@angular/material";
+import { CHECKED, UNCHECKED } from "./node-state";
 
 export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
 

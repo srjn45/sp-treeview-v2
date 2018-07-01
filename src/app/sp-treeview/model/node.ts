@@ -1,9 +1,7 @@
-import { NodeLevelConfig, Config } from "./config";
+import { Config } from "./config";
 import { EventEmitter } from "@angular/core";
-
-export const CHECKED = 1;
-export const UNCHECKED = 0;
-export const INDETERMINATE = -1;
+import { NodeState, CHECKED, UNCHECKED, INDETERMINATE } from "./node-state";
+import { NodeLevelConfig } from "./node-level-config";
 
 export class Node {
 
@@ -21,7 +19,6 @@ export class Node {
     }
 
     private config: Config;
-    private loadChildren: EventEmitter<Node>;
 
     constructor(
         private _name: string,
@@ -164,7 +161,6 @@ export class Node {
 
     filter(text: string, config: Config, loadChildren: EventEmitter<Node>): boolean {
         this.config = config;
-        this.loadChildren = loadChildren;
         if (this.children == null) {
             if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
                 this.nodeState.hidden = false;
@@ -201,48 +197,4 @@ export class Node {
         }
     }
 
-}
-
-/**
- * this class specifies the state(checked, collapsed, disabled) of the node
- */
-export class NodeState {
-    constructor(
-        private _checked = UNCHECKED,
-        private _collapsed = true,
-        private _disabled = false,
-        private _hidden = false
-    ) { }
-
-    get checked(): number {
-        return this._checked;
-    }
-
-    set checked(checked: number) {
-        this._checked = checked;
-    }
-
-    get collapsed(): boolean {
-        return this._collapsed;
-    }
-
-    set collapsed(collapsed: boolean) {
-        this._collapsed = collapsed;
-    }
-
-    get disabled(): boolean {
-        return this._disabled;
-    }
-
-    set disabled(disabled: boolean) {
-        this._disabled = disabled;
-    }
-
-    get hidden(): boolean {
-        return this._hidden;
-    }
-
-    set hidden(hidden: boolean) {
-        this._hidden = hidden;
-    }
 }

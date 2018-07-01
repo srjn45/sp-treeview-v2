@@ -2,8 +2,9 @@ import { Component, OnInit, Input, TemplateRef, EventEmitter, Output, ViewChild 
 import { Config } from '../model/config';
 import { SpTreeviewNodeTemplate } from '../model/sp-treeview-node-template';
 import { SpTreeviewComponent } from '../sp-treeview/sp-treeview.component';
-import { Node, UNCHECKED } from '../model/node';
+import { Node } from '../model/node';
 import { SpTreeviewNodeTemplateContext } from '../model/sp-treeview-node-template-context';
+import { UNCHECKED } from '../model/node-state';
 
 @Component({
   selector: 'sp-treeview-dropdown',

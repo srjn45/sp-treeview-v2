@@ -1,9 +1,11 @@
 import { Component, OnInit, Input, EventEmitter, Output, ViewChildren, QueryList, TemplateRef } from '@angular/core';
-import { Config, SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE } from '../model/config';
-import { Node, CHECKED, UNCHECKED, INDETERMINATE } from '../model/node';
+import { Config } from '../model/config';
+import { CHECKED, UNCHECKED, INDETERMINATE } from '../model/node-state';
 import { SpTreeviewNodeComponent } from '../sp-treeview-node/sp-treeview-node.component';
 import { SpTreeviewNodeTemplate } from '../model/sp-treeview-node-template';
 import { SpTreeviewNodeTemplateContext } from '../model/sp-treeview-node-template-context';
+import { Node } from '../model/node';
+import { SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE } from '../model/tree-level-config';
 
 @Component({
   selector: 'sp-treeview',

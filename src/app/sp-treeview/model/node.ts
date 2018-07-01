@@ -174,7 +174,7 @@ export class Node {
                 return false;
             }
         } else {
-            if (config.treeLevelConfig.lazyLoad && this.children.length == 0) {
+            if (this.children.length == 0) {
                 this.progress = true;
                 loadChildren.emit(this);
             }

@@ -63,8 +63,7 @@ export class TreeLevelConfig {
     private _treeview: SpTreeviewComponent;
 
     constructor(
-        // if lazyLoad then make service call for children
-        private _lazyLoad = false,
+        // make service call for children once or always
         private _loadOnce = true,
         private _select = SELECT_NONE,
         private _deleteNode = false,
@@ -80,14 +79,6 @@ export class TreeLevelConfig {
 
     set treeview(treeview: SpTreeviewComponent) {
         this._treeview = treeview;
-    }
-
-    get lazyLoad(): boolean {
-        return this._lazyLoad;
-    }
-
-    set lazyLoad(lazyLoad: boolean) {
-        this._lazyLoad = lazyLoad;
     }
 
     get loadOnce(): boolean {

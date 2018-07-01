@@ -1,5 +1,6 @@
 .treeview-base {
     position: relative;
+    min-width: fit-content;
 }
 
 mat-form-field {

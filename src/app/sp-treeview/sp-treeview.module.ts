@@ -5,6 +5,7 @@ import { MatProgressBarModule, MatCheckboxModule, MatRadioModule, MatButtonModul
 import { SpTreeviewComponent } from './sp-treeview/sp-treeview.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SpTreeviewOverlayComponent } from './sp-treeview-overlay/sp-treeview-overlay.component';
+import { SpTreeviewDropdownComponent } from './sp-treeview-dropdown/sp-treeview-dropdown.component';
 
 @NgModule({
   imports: [
@@ -19,10 +20,11 @@ import { SpTreeviewOverlayComponent } from './sp-treeview-overlay/sp-treeview-ov
     MatFormFieldModule,
     MatChipsModule
   ],
-  declarations: [SpTreeviewNodeComponent, SpTreeviewComponent, SpTreeviewOverlayComponent],
+  declarations: [SpTreeviewNodeComponent, SpTreeviewComponent, SpTreeviewOverlayComponent, SpTreeviewDropdownComponent],
   exports: [
     SpTreeviewComponent,
-    SpTreeviewOverlayComponent
+    SpTreeviewOverlayComponent,
+    SpTreeviewDropdownComponent
   ]
 })
 export class SpTreeviewModule { }

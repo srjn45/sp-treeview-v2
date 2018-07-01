@@ -1,0 +1,12 @@
+<div class="node-base" [class.slideUp]="node.nodeState.hidden">
+  <ng-template [ngTemplateOutlet]="template" [ngTemplateOutletContext]="context">
+  </ng-template>
+
+  <!-- <div class="node-child" *ngIf="!node.collapsed"> -->
+  <div class="node-child" [class.slideUp]="node.nodeState.collapsed">
+    <sp-treeview-node *ngFor="let child of node.children" [template]="template" [contextPrototype]="contextPrototype" [node]="child"
+      [config]="config" (radioSelect)="onRadioChange($event)" (checkboxSelect)="onCheckChange($event)" (delete)="onDelete($event)"
+      (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)">
+    </sp-treeview-node>
+  </div>
+</div>

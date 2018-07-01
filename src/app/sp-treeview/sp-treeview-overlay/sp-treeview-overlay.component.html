@@ -25,9 +25,11 @@
     </button>
   </mat-form-field>
   <!-- <div class="dropDown" *ngIf="dropDown" [style.height]="config.height"> -->
-  <div class="overlay" [class.slideUp]="!dropDown" [style.height]="config.height">
-    <sp-treeview [template]="template" [contextPrototype]="contextPrototype" [nodes]="nodes" [config]="config" (change)="onChange($event)"
-      (delete)="onDelete($event)" (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)"></sp-treeview>
+  <div class="overlay" [class.slideUp]="!dropDown">
+    <div style="height: calc(100% - 40px);overflow: auto;">
+      <sp-treeview [template]="template" [contextPrototype]="contextPrototype" [nodes]="nodes" [config]="config" (change)="onChange($event)"
+        (delete)="onDelete($event)" (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)"></sp-treeview>
+    </div>
     <div class="done">
       <button type="button" matSuffix mat-raised-button color="primary" (click)="dropDown=false">
         Done

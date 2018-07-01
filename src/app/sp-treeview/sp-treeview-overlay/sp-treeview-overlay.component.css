@@ -35,9 +35,9 @@
 }
 
 .overlay>div.done {
-    position: absolute;
+    /* position: absolute;
     width: calc(100% - 20px);
-    bottom: 10px;
+    bottom: 10px; */
     display: flex;
     justify-content: flex-end;
 }

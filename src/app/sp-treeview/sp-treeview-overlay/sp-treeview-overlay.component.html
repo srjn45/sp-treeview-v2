@@ -1,6 +1,7 @@
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <div class="base">
-  <mat-form-field class="full-width pointer" [class.liftup]="dropDown" (click)="dropDown=!dropDown">
+  <mat-form-field class="full-width pointer" [class.shrink]="selectedNodes==null || selectedNodes.length==0" [class.liftup]="dropDown"
+    (click)="dropDown=!dropDown">
 
     <button type="button" matPrefix mat-icon-button (click)="scrollLeft($event)" color="primary">
       <mat-icon>keyboard_arrow_left</mat-icon>
@@ -27,6 +28,11 @@
   <div class="overlay" [class.slideUp]="!dropDown" [style.height]="config.height">
     <sp-treeview [template]="template" [contextPrototype]="contextPrototype" [nodes]="nodes" [config]="config" (change)="onChange($event)"
       (delete)="onDelete($event)" (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)"></sp-treeview>
+    <div class="done">
+      <button type="button" matSuffix mat-raised-button color="primary" (click)="dropDown=false">
+        Done
+      </button>
+    </div>
   </div>
 </div>
 

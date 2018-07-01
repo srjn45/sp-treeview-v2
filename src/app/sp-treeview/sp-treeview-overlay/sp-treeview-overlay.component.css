@@ -34,6 +34,14 @@
     z-index: 1010;
 }
 
+.overlay>div.done {
+    position: absolute;
+    width: calc(100% - 20px);
+    bottom: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
 .cvr-screen {
     position: fixed;
     top: 0px;
@@ -67,4 +75,9 @@
 
 * {
     transition: all 0.3s;
+}
+
+.shrink ::ng-deep .mat-input-infix {
+    padding-top: 0px;
+    padding-bottom: 0px;
 }

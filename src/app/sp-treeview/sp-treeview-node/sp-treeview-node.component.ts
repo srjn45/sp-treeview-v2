@@ -41,7 +41,7 @@ export class SpTreeviewNodeComponent implements OnInit {
   }
 
   ngOnInit() {
-    // set input context prototype 
+    // set input context prototype
     this.context = Object.setPrototypeOf(this.context, this.contextPrototype);
     // input
     this.context.node = this.node;

@@ -1,7 +1,7 @@
-import { Node } from "./node";
-import { Config } from "./config";
-import { MatRadioChange, MatCheckboxChange } from "@angular/material";
-import { EventEmitter } from "@angular/core";
+import { Node } from './node';
+import { Config } from './config';
+import { MatRadioChange, MatCheckboxChange } from '@angular/material';
+import { EventEmitter } from '@angular/core';
 
 export interface SpTreeviewNodeTemplate {
 

@@ -1,4 +1,4 @@
-import { SpTreeviewComponent } from "../sp-treeview/sp-treeview.component";
+import { SpTreeviewComponent } from '../sp-treeview/sp-treeview.component';
 
 export const SELECT_NONE = 0;
 export const SELECT_CHECKBOX = 1;

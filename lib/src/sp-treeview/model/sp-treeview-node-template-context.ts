@@ -1,9 +1,9 @@
-import { SpTreeviewNodeTemplate } from "./sp-treeview-node-template";
-import { Config } from "./config";
-import { Node } from "./node";
-import { EventEmitter } from "@angular/core";
-import { MatRadioChange, MatCheckboxChange } from "@angular/material";
-import { CHECKED, UNCHECKED } from "./node-state";
+import { SpTreeviewNodeTemplate } from './sp-treeview-node-template';
+import { Config } from './config';
+import { Node } from './node';
+import { EventEmitter } from '@angular/core';
+import { MatRadioChange, MatCheckboxChange } from '@angular/material';
+import { CHECKED, UNCHECKED } from './node-state';
 
 export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
 
@@ -21,9 +21,9 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
     }
 
     onCollapseExpand = (node: Node) => {
-        console.log("collapsed/expand");
+        console.log('collapsed/expand');
         if (node.nodeState.collapsed) {
-            if ((this.config.treeLevelConfig.loadOnce && node.children.length == 0) || (!this.config.treeLevelConfig.loadOnce)) {
+            if ((this.config.treeLevelConfig.loadOnce && node.children.length === 0) || (!this.config.treeLevelConfig.loadOnce)) {
                 node.progress = true;
                 this.loadChildren.emit(node);
                 return;

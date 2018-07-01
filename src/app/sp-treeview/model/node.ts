@@ -1,14 +1,16 @@
-import { Config } from "./config";
-import { EventEmitter } from "@angular/core";
-import { NodeState, CHECKED, UNCHECKED, INDETERMINATE } from "./node-state";
-import { NodeLevelConfig } from "./node-level-config";
+import { Config } from './config';
+import { EventEmitter } from '@angular/core';
+import { NodeState, CHECKED, UNCHECKED, INDETERMINATE } from './node-state';
+import { NodeLevelConfig } from './node-level-config';
 
 export class Node {
 
+    private config: Config;
+
     /**
      * recursively sets prototype Node on the object and its children
-     * 
-     * @param node 
+     *
+     * @param node
      */
     public static nodify(node: any): Node {
         node = Object.setPrototypeOf(node, Node.prototype);
@@ -17,8 +19,6 @@ export class Node {
         }
         return node;
     }
-
-    private config: Config;
 
     constructor(
         private _name: string,
@@ -170,7 +170,7 @@ export class Node {
                 return false;
             }
         } else {
-            if (this.children.length == 0) {
+            if (this.children.length === 0) {
                 this.progress = true;
                 loadChildren.emit(this);
             }

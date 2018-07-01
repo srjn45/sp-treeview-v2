@@ -1,5 +1,5 @@
 /**
- * this class properties if set will override the tree level config  
+ * this class properties if set will override the tree level config
  */
 export class NodeLevelConfig {
     constructor(

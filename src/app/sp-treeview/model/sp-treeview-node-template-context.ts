@@ -23,9 +23,11 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
         console.log("collapsed/expand");
         if (node.nodeState.collapsed) {
             if (this.config.treeLevelConfig.lazyLoad) {
-                node.progress = true;
-                this.loadChildren.emit(node);
-                return;
+                if ((this.config.treeLevelConfig.loadOnce && node.children.length == 0) || (!this.config.treeLevelConfig.loadOnce)) {
+                    node.progress = true;
+                    this.loadChildren.emit(node);
+                    return;
+                }
             }
         }
         node.nodeState.collapsed = !node.nodeState.collapsed;

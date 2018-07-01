@@ -65,6 +65,7 @@ export class TreeLevelConfig {
     constructor(
         // if lazyLoad then make service call for children
         private _lazyLoad = false,
+        private _loadOnce = true,
         private _select = SELECT_NONE,
         private _deleteNode = false,
         private _addChild = false,
@@ -87,6 +88,14 @@ export class TreeLevelConfig {
 
     set lazyLoad(lazyLoad: boolean) {
         this._lazyLoad = lazyLoad;
+    }
+
+    get loadOnce(): boolean {
+        return this._loadOnce;
+    }
+
+    set loadOnce(loadOnce: boolean) {
+        this._loadOnce = loadOnce;
     }
 
     get select(): number {

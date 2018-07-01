@@ -24,6 +24,7 @@ export class SpTreeviewDropdownComponent implements OnInit {
 
   @Output() delete: EventEmitter<Node> = new EventEmitter<Node>();
   @Output() addChild: EventEmitter<Node> = new EventEmitter<Node>();
+  @Output() loadChildren: EventEmitter<Node> = new EventEmitter<Node>();
 
   @ViewChild(SpTreeviewComponent) tree: SpTreeviewComponent;
 
@@ -91,4 +92,9 @@ export class SpTreeviewDropdownComponent implements OnInit {
   onAddChild(node: Node) {
     this.addChild.emit(node);
   }
+
+  onLoadChildren(node: Node) {
+    this.loadChildren.emit(node);
+  }
+
 }

@@ -59,8 +59,8 @@ export class Node {
         this._progress = false;
         this._nodeState.collapsed = false;
         this.verifyStateRecursive();
-        if (this.config != null && this.loadChildren != null) {
-            this.filter(this.config.treeLevelConfig.searchStr, this.config, this.loadChildren);
+        if (this.config != null) {
+            this.config.treeLevelConfig.treeview.applySearch();
         }
     }
 

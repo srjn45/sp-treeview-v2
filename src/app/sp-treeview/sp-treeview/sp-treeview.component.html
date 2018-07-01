@@ -5,9 +5,9 @@
       <button type="button" mat-button mat-icon-button matPrefix color="primary">
         <mat-icon>search</mat-icon>
       </button>
-      <button type="button" mat-button mat-icon-button matSuffix color="warn" (click)="$event.stopPropagation();search.value=null;applySearch('')">
+      <!-- <button type="button" mat-button mat-icon-button matSuffix color="warn" (click)="$event.stopPropagation();search.value=null;applySearch('')">
         <mat-icon>close</mat-icon>
-      </button>
+      </button> -->
     </mat-form-field>
     <mat-progress-bar *ngIf="config.treeLevelConfig.progress" mode="indeterminate"></mat-progress-bar>
   </div>

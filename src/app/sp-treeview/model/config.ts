@@ -1,3 +1,5 @@
+import { SpTreeviewComponent } from "../sp-treeview/sp-treeview.component";
+
 export const SELECT_NONE = 0;
 export const SELECT_CHECKBOX = 1;
 export const SELECT_RADIO = 2;
@@ -57,6 +59,9 @@ export class DropdownLevelConfig {
  * this class sets the config for complete tree
  */
 export class TreeLevelConfig {
+
+    private _treeview: SpTreeviewComponent;
+
     constructor(
         // if lazyLoad then make service call for children
         private _lazyLoad = false,
@@ -65,8 +70,16 @@ export class TreeLevelConfig {
         private _addChild = false,
         private _search = true,
         private _progress = false,
-        private _searchStr = ''
+        private _searchStr = '',
     ) { }
+
+    get treeview(): SpTreeviewComponent {
+        return this._treeview;
+    }
+
+    set treeview(treeview: SpTreeviewComponent) {
+        this._treeview = treeview;
+    }
 
     get lazyLoad(): boolean {
         return this._lazyLoad;

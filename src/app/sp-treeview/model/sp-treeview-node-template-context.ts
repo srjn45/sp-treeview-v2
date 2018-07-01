@@ -10,7 +10,7 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
     config: Config = new Config();
 
     radioSelect: EventEmitter<Node[]>;
-    checkboxSelect: EventEmitter<Node[]>;
+    checkboxSelect: EventEmitter<null>;
     delete: EventEmitter<Node>;
     addChild: EventEmitter<Node>;
     loadChildren: EventEmitter<Node>;
@@ -57,7 +57,7 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
         this.node.changeChildrenRecursive();
 
         // notify parent of the change
-        this.checkboxSelect.emit(this.node.getCheckedValues());
+        this.checkboxSelect.emit();
     }
 
 }

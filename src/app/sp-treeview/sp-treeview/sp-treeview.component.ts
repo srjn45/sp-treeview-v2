@@ -37,6 +37,7 @@ export class SpTreeviewComponent implements OnInit {
   constructor() { }
 
   ngOnInit() {
+    this.config.treeLevelConfig.treeview = this;
     this.nodes.forEach(n => Node.nodify(n));
   }
 
@@ -48,13 +49,13 @@ export class SpTreeviewComponent implements OnInit {
 
   onSearch(event: Event) {
     let str = (<HTMLInputElement>event.srcElement).value;
-    this.applySearch(str);
+    this.config.treeLevelConfig.searchStr = str;
+    this.applySearch();
   }
 
-  applySearch(str: string) {
-    this.config.treeLevelConfig.searchStr = str;
+  applySearch() {
     this.config.treeLevelConfig.progress = true;
-    this.trees.forEach(t => t.search(str));
+    this.trees.forEach(t => t.search(this.config.treeLevelConfig.searchStr));
     this.config.treeLevelConfig.progress = false;
   }
 

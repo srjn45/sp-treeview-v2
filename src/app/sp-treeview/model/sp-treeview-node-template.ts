@@ -12,7 +12,7 @@ export interface SpTreeviewNodeTemplate {
     addChild: EventEmitter<Node>;
     loadChildren: EventEmitter<Node>;
     radioSelect: EventEmitter<Node[]>;
-    checkboxSelect: EventEmitter<Node[]>;
+    checkboxSelect: EventEmitter<null>;
 
     onCollapseExpand: (node: Node) => void;
     onCheckChange: (node: MatCheckboxChange) => void;

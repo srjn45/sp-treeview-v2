@@ -26,7 +26,7 @@ export class SpTreeviewNodeComponent implements OnInit {
   @Input() public config: Config = new Config();
 
   @Output() public radioSelect: EventEmitter<Node[]> = new EventEmitter<Node[]>();
-  @Output() public checkboxSelect: EventEmitter<Node[]> = new EventEmitter<Node[]>();
+  @Output() public checkboxSelect: EventEmitter<null> = new EventEmitter<null>();
 
   @Output() public delete: EventEmitter<Node> = new EventEmitter<Node>();
   @Output() public addChild: EventEmitter<Node> = new EventEmitter<Node>();
@@ -70,7 +70,7 @@ export class SpTreeviewNodeComponent implements OnInit {
 
   onCheckChange(nodes: Node[]) {
     this.node.checkImmediateChildren();
-    this.checkboxSelect.emit(this.node.getCheckedValues());
+    this.checkboxSelect.emit();
   }
 
   search(text: string): boolean {

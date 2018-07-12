@@ -11,7 +11,7 @@
     </mat-form-field>
     <mat-progress-bar *ngIf="config.treeLevelConfig.progress" mode="indeterminate"></mat-progress-bar>
   </div>
-  <div class="treeview-content">
+  <div class="treeview-content" [style.height]="config.dropdownLevelConfig.height">
     <mat-radio-group>
       <sp-treeview-node #tree *ngFor="let node of nodes;let i = index" [template]="template?template:nodeTemplate" [contextPrototype]="contextPrototype"
         [node]="node" [config]="config" (radioSelect)="onChange($event)" (checkboxSelect)="onChange($event)" (delete)="onDelete($event)"

@@ -4,6 +4,7 @@ import { Config } from './sp-treeview/model/config';
 import { SpTreeviewNodeTemplateContext } from './sp-treeview/model/sp-treeview-node-template-context';
 import { TreeLevelConfig, SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE } from './sp-treeview/model/tree-level-config';
 import { CHECKED, UNCHECKED, INDETERMINATE } from './sp-treeview/model/node-state';
+import { DropdownLevelConfig } from './sp-treeview/model/dropdown-level-config';
 
 @Component({
   selector: 'app-root',
@@ -21,7 +22,7 @@ export class AppComponent {
   public UNCHECKED = UNCHECKED;
   public INDETERMINATE = INDETERMINATE;
 
-  config = new Config(new TreeLevelConfig(true, SELECT_CHECKBOX, true, true, true));
+  config = new Config(new TreeLevelConfig(true, SELECT_CHECKBOX, true, true, true), new DropdownLevelConfig('200px'));
   nodes: Node[] = [];
 
   _dataSource = [

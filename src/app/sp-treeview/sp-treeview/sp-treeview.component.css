@@ -42,3 +42,6 @@ mat-form-field {
 ::ng-deep .mat-form-field-underline {
     bottom: 0px !important;
 }
+.treeview-content {
+    overflow: auto;
+}

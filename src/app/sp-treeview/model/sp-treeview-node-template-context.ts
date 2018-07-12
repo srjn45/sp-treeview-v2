@@ -21,7 +21,7 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
     }
 
     onCollapseExpand = (node: Node) => {
-        console.log('collapsed/expand');
+        node.unHideChildren();
         if (node.nodeState.collapsed) {
             if ((this.config.treeLevelConfig.loadOnce && node.children.length === 0) || (!this.config.treeLevelConfig.loadOnce)) {
                 node.progress = true;

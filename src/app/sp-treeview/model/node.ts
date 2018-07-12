@@ -163,37 +163,29 @@ export class Node {
 
     filter(text: string, config: Config, loadChildren: EventEmitter<Node>): boolean {
         this.config = config;
-        if (this.children == null) {
-            if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
-                this.nodeState.hidden = false;
-                return true;
-            } else {
+        if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
+            this.nodeState.hidden = false;
+            return true;
+        } else {
+            if (this.children == null) {
                 this.nodeState.hidden = true;
                 return false;
-            }
-        } else {
-            if (this.children.length === 0) {
-                this.progress = true;
-                loadChildren.emit(this);
-            }
-            let matchFound = false;
-            this.children.forEach(child => {
-                let childMatchFound = child.filter(text, config, loadChildren);
-                if (!matchFound) {
-                    matchFound = childMatchFound;
-                }
-            });
-            if (matchFound) {
-                this.nodeState.hidden = false;
-                this.nodeState.collapsed = false;
-                return true;
             } else {
-                if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
+                if (this.children.length === 0) {
+                    this.progress = true;
+                    loadChildren.emit(this);
+                }
+                let matchFound = false;
+                this.children.forEach(child => {
+                    let childMatchFound = child.filter(text, config, loadChildren);
+                    if (!matchFound) {
+                        matchFound = childMatchFound;
+                    }
+                });
+                if (matchFound) {
                     this.nodeState.hidden = false;
+                    this.nodeState.collapsed = false;
                     return true;
-                } else {
-                    this.nodeState.hidden = true;
-                    return false;
                 }
             }
         }

@@ -12,8 +12,10 @@ export class Node {
      *
      * @param node
      */
-    public static nodify(node: any): Node {
-        node = Object.setPrototypeOf(node, Node.prototype);
+    public static nodify(obj: any): Node {
+        const node: Node = Object.setPrototypeOf(obj, Node.prototype);
+        node.nodeState = Object.setPrototypeOf(node.nodeState, NodeState.prototype);
+        node.nodeLevelConfig = Object.setPrototypeOf(node.nodeLevelConfig, NodeLevelConfig.prototype);
         if (node.children != null) {
             node.children.forEach(n => this.nodify(n));
         }

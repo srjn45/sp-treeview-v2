@@ -163,32 +163,48 @@ export class Node {
 
     filter(text: string, config: Config, loadChildren: EventEmitter<Node>): boolean {
         this.config = config;
-        if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
-            this.nodeState.hidden = false;
-            return true;
-        } else {
-            if (this.children == null) {
+        if (this.children == null) {
+            if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
+                this.nodeState.hidden = false;
+                return true;
+            } else {
                 this.nodeState.hidden = true;
                 return false;
-            } else {
-                if (this.children.length === 0) {
-                    this.progress = true;
-                    loadChildren.emit(this);
+            }
+        } else {
+            if (this.children.length === 0) {
+                this.progress = true;
+                loadChildren.emit(this);
+            }
+            let matchFound = false;
+            this.children.forEach(child => {
+                let childMatchFound = child.filter(text, config, loadChildren);
+                if (!matchFound) {
+                    matchFound = childMatchFound;
                 }
-                let matchFound = false;
-                this.children.forEach(child => {
-                    let childMatchFound = child.filter(text, config, loadChildren);
-                    if (!matchFound) {
-                        matchFound = childMatchFound;
-                    }
-                });
-                if (matchFound) {
+            });
+            if (matchFound) {
+                this.nodeState.hidden = false;
+                this.nodeState.collapsed = false;
+                return true;
+            } else {
+                this.nodeState.collapsed = true;
+                if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
                     this.nodeState.hidden = false;
-                    this.nodeState.collapsed = false;
                     return true;
+                } else {
+                    this.nodeState.hidden = true;
+                    return false;
                 }
             }
         }
     }
 
+    unHideChildren() {
+        if (this.children) {
+            this.children.forEach(child => {
+                child.nodeState.hidden = false;
+            });
+        }
+    }
 }

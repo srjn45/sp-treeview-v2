@@ -66,7 +66,7 @@ export class Node {
         this._progress = false;
         this._nodeState.collapsed = false;
         this.verifyStateRecursive();
-        if (this.config != null) {
+        if (this.config != null && (this.config.treeLevelConfig.searchStr != null || this.config.treeLevelConfig.searchStr != '')) {
             this.config.treeLevelConfig.treeview.applySearch();
         }
     }

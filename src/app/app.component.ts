@@ -40,6 +40,7 @@ export class AppComponent {
     { parent: '1', node: new Node('Nevada', 'NV', []) },
     { parent: 'NV', node: new Node('Las Vegas', '702') },
     { parent: 'NV', node: new Node('Carson City', '775') },
+    { parent: '0', node: <Node>{ name: 'Test', value: '345' } },
   ];
 
   contextPrototype = SpTreeviewNodeTemplateContext.prototype;

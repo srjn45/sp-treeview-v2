@@ -1,6 +1,6 @@
 
 /**
- * this class set the config for dropdown
+ * this class public set the config for dropdown
  */
 export class DropdownLevelConfig {
     constructor(
@@ -8,19 +8,19 @@ export class DropdownLevelConfig {
         private _showDropdownDefault = false
     ) { }
 
-    get height(): string {
+    public get height(): string {
         return this._height;
     }
 
-    set height(height: string) {
+    public set height(height: string) {
         this._height = height;
     }
 
-    get showDropdownDefault(): boolean {
+    public get showDropdownDefault(): boolean {
         return this._showDropdownDefault;
     }
 
-    set showDropdownDefault(showDropdownDefault: boolean) {
+    public set showDropdownDefault(showDropdownDefault: boolean) {
         this._showDropdownDefault = showDropdownDefault;
     }
 

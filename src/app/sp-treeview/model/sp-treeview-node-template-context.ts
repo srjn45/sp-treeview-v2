@@ -20,7 +20,7 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
 
     }
 
-    onCollapseExpand = (node: Node) => {
+    public onCollapseExpand = (node: Node) => {
         node.unHideChildren();
         if (node.nodeState.collapsed) {
             if ((this.config.treeLevelConfig.loadOnce && node.children.length === 0) || (!this.config.treeLevelConfig.loadOnce)) {
@@ -32,19 +32,19 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
         node.nodeState.collapsed = !node.nodeState.collapsed;
     }
 
-    onDelete = (node: Node) => {
+    public onDelete = (node: Node) => {
         this.delete.emit(node);
     }
 
-    onAddChild = (node: Node) => {
+    public onAddChild = (node: Node) => {
         this.addChild.emit(node);
     }
 
-    onLoadChildren = (node: Node) => {
+    public onLoadChildren = (node: Node) => {
         this.loadChildren.emit(node);
     }
 
-    onRadioChange = (event: MatRadioChange) => {
+    public onRadioChange = (event: MatRadioChange) => {
         this.radioSelect.emit([event.value]);
     }
 
@@ -52,7 +52,7 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
      * called when the checkbox value is changed
      * sets checked value recursively
      */
-    onCheckChange = (event: MatCheckboxChange) => {
+    public onCheckChange = (event: MatCheckboxChange) => {
         // set new check status for this node and its children
         this.node.nodeState.checked = event.checked ? CHECKED : UNCHECKED;
         this.node.changeChildrenRecursive();

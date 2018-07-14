@@ -7,19 +7,19 @@ export class Config {
         private _dropdownLevelConfig = new DropdownLevelConfig()
     ) { }
 
-    get treeLevelConfig(): TreeLevelConfig {
+    public get treeLevelConfig(): TreeLevelConfig {
         return this._treeLevelConfig;
     }
 
-    set treeLevelConfig(treeLevelConfig: TreeLevelConfig) {
+    public set treeLevelConfig(treeLevelConfig: TreeLevelConfig) {
         this._treeLevelConfig = treeLevelConfig;
     }
 
-    get dropdownLevelConfig(): DropdownLevelConfig {
+    public get dropdownLevelConfig(): DropdownLevelConfig {
         return this._dropdownLevelConfig;
     }
 
-    set dropdownLevelConfig(dropdownLevelConfig: DropdownLevelConfig) {
+    public set dropdownLevelConfig(dropdownLevelConfig: DropdownLevelConfig) {
         this._dropdownLevelConfig = dropdownLevelConfig;
     }
 }

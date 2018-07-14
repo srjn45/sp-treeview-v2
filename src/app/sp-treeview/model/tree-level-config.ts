@@ -22,67 +22,67 @@ export class TreeLevelConfig {
         private _searchStr = '',
     ) { }
 
-    get treeview(): SpTreeviewComponent {
+    public get treeview(): SpTreeviewComponent {
         return this._treeview;
     }
 
-    set treeview(treeview: SpTreeviewComponent) {
+    public set treeview(treeview: SpTreeviewComponent) {
         this._treeview = treeview;
     }
 
-    get loadOnce(): boolean {
+    public get loadOnce(): boolean {
         return this._loadOnce;
     }
 
-    set loadOnce(loadOnce: boolean) {
+    public set loadOnce(loadOnce: boolean) {
         this._loadOnce = loadOnce;
     }
 
-    get select(): number {
+    public get select(): number {
         return this._select;
     }
 
-    set select(select: number) {
+    public set select(select: number) {
         this._select = select;
     }
 
-    get search(): boolean {
+    public get search(): boolean {
         return this._search;
     }
 
-    set search(search: boolean) {
+    public set search(search: boolean) {
         this._search = search;
     }
 
-    get searchStr(): string {
+    public get searchStr(): string {
         return this._searchStr;
     }
 
-    set searchStr(searchStr: string) {
+    public set searchStr(searchStr: string) {
         this._searchStr = searchStr;
     }
 
-    get progress(): boolean {
+    public get progress(): boolean {
         return this._progress;
     }
 
-    set progress(progress: boolean) {
+    public set progress(progress: boolean) {
         this._progress = progress;
     }
 
-    get deleteNode(): boolean {
+    public get deleteNode(): boolean {
         return this._deleteNode;
     }
 
-    set deleteNode(deleteNode: boolean) {
+    public set deleteNode(deleteNode: boolean) {
         this._deleteNode = deleteNode;
     }
 
-    get addChild(): boolean {
+    public get addChild(): boolean {
         return this._addChild;
     }
 
-    set addChild(addChild: boolean) {
+    public set addChild(addChild: boolean) {
         this._addChild = addChild;
     }
 

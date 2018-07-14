@@ -1,5 +1,5 @@
 /**
- * this class properties if set will override the tree level config
+ * this class properties if public set will override the tree level config
  */
 export class NodeLevelConfig {
     constructor(
@@ -7,17 +7,17 @@ export class NodeLevelConfig {
         private _addChild?: boolean
     ) { }
 
-    get deleteNode(): boolean {
+    public get deleteNode(): boolean {
         return this._deleteNode;
     }
-    set deleteNode(deleteNode: boolean) {
+    public set deleteNode(deleteNode: boolean) {
         this._deleteNode = deleteNode;
     }
 
-    get addChild(): boolean {
+    public get addChild(): boolean {
         return this._addChild;
     }
-    set addChild(addChild: boolean) {
+    public set addChild(addChild: boolean) {
         this._addChild = addChild;
     }
 }

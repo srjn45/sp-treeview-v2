@@ -13,35 +13,35 @@ export class NodeState {
         private _hidden = false
     ) { }
 
-    get checked(): number {
+    public get checked(): number {
         return this._checked;
     }
 
-    set checked(checked: number) {
+    public set checked(checked: number) {
         this._checked = checked;
     }
 
-    get collapsed(): boolean {
+    public get collapsed(): boolean {
         return this._collapsed;
     }
 
-    set collapsed(collapsed: boolean) {
+    public set collapsed(collapsed: boolean) {
         this._collapsed = collapsed;
     }
 
-    get disabled(): boolean {
+    public get disabled(): boolean {
         return this._disabled;
     }
 
-    set disabled(disabled: boolean) {
+    public set disabled(disabled: boolean) {
         this._disabled = disabled;
     }
 
-    get hidden(): boolean {
+    public get hidden(): boolean {
         return this._hidden;
     }
 
-    set hidden(hidden: boolean) {
+    public set hidden(hidden: boolean) {
         this._hidden = hidden;
     }
 }

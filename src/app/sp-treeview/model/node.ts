@@ -14,8 +14,16 @@ export class Node {
      */
     public static nodify(obj: any): Node {
         const node: Node = Object.setPrototypeOf(obj, Node.prototype);
-        node.nodeState = Object.setPrototypeOf(node.nodeState, NodeState.prototype);
-        node.nodeLevelConfig = Object.setPrototypeOf(node.nodeLevelConfig, NodeLevelConfig.prototype);
+        if (node.nodeState == null) {
+            node.nodeState = new NodeState();
+        } else {
+            node.nodeState = Object.setPrototypeOf(node.nodeState, NodeState.prototype);
+        }
+        if (node.nodeLevelConfig == null) {
+            node.nodeLevelConfig = new NodeLevelConfig();
+        } else {
+            node.nodeLevelConfig = Object.setPrototypeOf(node.nodeLevelConfig, NodeLevelConfig.prototype);
+        }
         if (node.children != null) {
             node.children.forEach(n => this.nodify(n));
         }
@@ -33,27 +41,27 @@ export class Node {
 
     }
 
-    get name(): string {
+    public get name(): string {
         return this._name;
     }
 
-    set name(name: string) {
+    public set name(name: string) {
         this._name = name;
     }
 
-    get value(): any {
+    public get value(): any {
         return this._value;
     }
 
-    set value(value: any) {
+    public set value(value: any) {
         this._value = value;
     }
 
-    get children(): Node[] {
+    public get children(): Node[] {
         return this._children;
     }
 
-    set children(children: Node[]) {
+    public set children(children: Node[]) {
         this._children = children;
         this._progress = false;
         this._nodeState.collapsed = false;
@@ -63,27 +71,27 @@ export class Node {
         }
     }
 
-    get progress(): boolean {
+    public get progress(): boolean {
         return this._progress;
     }
 
-    set progress(progress: boolean) {
+    public set progress(progress: boolean) {
         this._progress = progress;
     }
 
-    get nodeState(): NodeState {
+    public get nodeState(): NodeState {
         return this._nodeState;
     }
 
-    set nodeState(nodeState: NodeState) {
+    public set nodeState(nodeState: NodeState) {
         this._nodeState = nodeState;
     }
 
-    get nodeLevelConfig(): NodeLevelConfig {
+    public get nodeLevelConfig(): NodeLevelConfig {
         return this._nodeLevelConfig;
     }
 
-    set nodeLevelConfig(nodeLevelConfig: NodeLevelConfig) {
+    public set nodeLevelConfig(nodeLevelConfig: NodeLevelConfig) {
         this._nodeLevelConfig = nodeLevelConfig;
     }
 
@@ -130,7 +138,7 @@ export class Node {
 
             if (indeterminateChildren > 0) {
                 // if indeterminate child the indeterminate
-                this.nodeState.checked = UNCHECKED;
+                this.nodeState.checked = INDETERMINATE;
             } else {
                 // if no indeterminate child
                 if (checkedChildren === this.children.length) {
@@ -161,7 +169,7 @@ export class Node {
         return [];
     }
 
-    filter(text: string, config: Config, loadChildren: EventEmitter<Node>): boolean {
+    public filter(text: string, config: Config, loadChildren: EventEmitter<Node>): boolean {
         this.config = config;
         if (this.children == null) {
             if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
@@ -200,7 +208,7 @@ export class Node {
         }
     }
 
-    unHideChildren() {
+    public unHideChildren() {
         if (this.children) {
             this.children.forEach(child => {
                 child.nodeState.hidden = false;

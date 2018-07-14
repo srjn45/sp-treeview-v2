@@ -59,12 +59,18 @@
     display: none !important;
 } */
 
-::ng-deep .mat-chip-list-wrapper {
+.shrink ::ng-deep .mat-chip-list-wrapper {
     flex-wrap: nowrap !important;
     align-items: center !important;
     overflow: hidden;
     scroll-behavior: smooth;
     height: 32px;
+}
+
+.shrink ::ng-deep .mat-chip {
+    line-height: 10px;
+    font-size: 10px;
+    padding: 1px 5px;
 }
 
 .slideUp {

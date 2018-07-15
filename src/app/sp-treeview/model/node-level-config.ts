@@ -5,7 +5,14 @@ export class NodeLevelConfig {
     constructor(
         private _deleteNode?: boolean,
         private _addChild?: boolean
-    ) { }
+    ) {
+        if (this._addChild == undefined || this._addChild === undefined) {
+            this._addChild = null;
+        }
+        if (this._deleteNode == undefined || this._deleteNode === undefined) {
+            this._deleteNode = null;
+        }
+    }
 
     public get deleteNode(): boolean {
         return this._deleteNode;

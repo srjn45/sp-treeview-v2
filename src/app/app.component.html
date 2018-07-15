@@ -2,6 +2,10 @@
   (loadChildren)="onLoadChildren($event)" (change)="onChange($event)">
 </sp-treeview-dropdown>
 
+<sp-treeview-overlay [placeholder]="'placeholder'" [nodes]="nodes" [config]="config" (delete)="onDelete($event)" (addChild)="onAddChild($event)"
+  (loadChildren)="onLoadChildren($event)" (change)="onChange($event)">
+</sp-treeview-overlay>
+
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <ng-template #nodeTemplate let-node="node" let-config="config" let-onCollapseExpand="onCollapseExpand" let-onCheckChange="onCheckChange"
   let-onRadioChange="onRadioChange" let-onDelete="onDelete" let-onAddChild="onAddChild" let-onLoadChildren="onLoadChildren">
@@ -33,13 +37,13 @@
     app&nbsp;&nbsp;
 
     <!-- add child -->
-    <button mat-icon-button class="btn-small" *ngIf="((node.nodeLevelConfig.addChild!==null || node.nodeLevelConfig.addChild!==undefined) && node.nodeLevelConfig.addChild)
+    <button mat-icon-button class="btn-small" *ngIf="((node.nodeLevelConfig.addChild!=null || node.nodeLevelConfig.addChild!=undefined) && node.nodeLevelConfig.addChild)
      || ((node.nodeLevelConfig.addChild===null || node.nodeLevelConfig.addChild===undefined) && config.treeLevelConfig.addChild)">
       <mat-icon class="icon-small" color="primary" (click)="onAddChild(node)">add</mat-icon>
     </button>
 
     <!-- delete node -->
-    <button mat-icon-button class="btn-small" *ngIf="((node.nodeLevelConfig.deleteNode!==null || node.nodeLevelConfig.deleteNode!==undefined) && node.nodeLevelConfig.deleteNode)
+    <button mat-icon-button class="btn-small" *ngIf="((node.nodeLevelConfig.deleteNode!=null || node.nodeLevelConfig.deleteNode!=undefined) && node.nodeLevelConfig.deleteNode)
     || ((node.nodeLevelConfig.deleteNode===null || node.nodeLevelConfig.deleteNode===undefined) && config.treeLevelConfig.deleteNode)">
       <mat-icon class="icon-small" color="warn" (click)="onDelete(node)">clear</mat-icon>
     </button>

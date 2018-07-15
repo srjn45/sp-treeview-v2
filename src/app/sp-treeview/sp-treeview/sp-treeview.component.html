@@ -50,14 +50,14 @@
     </label>
 
     <!-- add child -->
-    <button mat-icon-button class="btn-small" *ngIf="((node.nodeLevelConfig.addChild!==null || node.nodeLevelConfig.addChild!==undefined) && node.nodeLevelConfig.addChild)
-     || ((node.nodeLevelConfig.addChild===null || node.nodeLevelConfig.addChild===undefined) && config.treeLevelConfig.addChild)">
+    <button mat-icon-button class="btn-small" *ngIf="((node.nodeLevelConfig.addChild!=null || node.nodeLevelConfig.addChild!=undefined) && node.nodeLevelConfig.addChild)
+     || ((node.nodeLevelConfig.addChild==null || node.nodeLevelConfig.addChild==undefined) && config.treeLevelConfig.addChild)">
       <mat-icon class="icon-small" color="primary" (click)="onAddChild(node)">add</mat-icon>
     </button>
 
     <!-- delete node -->
-    <button mat-icon-button class="btn-small" *ngIf="((node.nodeLevelConfig.deleteNode!==null || node.nodeLevelConfig.deleteNode!==undefined) && node.nodeLevelConfig.deleteNode)
-    || ((node.nodeLevelConfig.deleteNode===null || node.nodeLevelConfig.deleteNode===undefined) && config.treeLevelConfig.deleteNode)">
+    <button mat-icon-button class="btn-small" *ngIf="((node.nodeLevelConfig.deleteNode!=null || node.nodeLevelConfig.deleteNode!=undefined) && node.nodeLevelConfig.deleteNode)
+    || ((node.nodeLevelConfig.deleteNode==null || node.nodeLevelConfig.deleteNode==undefined) && config.treeLevelConfig.deleteNode)">
       <mat-icon class="icon-small" color="warn" (click)="onDelete(node)">clear</mat-icon>
     </button>
 

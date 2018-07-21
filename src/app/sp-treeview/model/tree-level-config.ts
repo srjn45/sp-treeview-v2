@@ -11,6 +11,8 @@ export class TreeLevelConfig {
 
     private _treeview: SpTreeviewComponent;
 
+    private loadChildrenStack = [];
+
     constructor(
         // make service call for children once or always
         private _loadOnce = true,
@@ -84,6 +86,24 @@ export class TreeLevelConfig {
 
     public set addChild(addChild: boolean) {
         this._addChild = addChild;
+    }
+
+    public loadChildren() {
+        this.loadChildrenStack.push(1);
+        console.log("push" + this.loadChildrenStack.length);
+    }
+    public childrenLoaded() {
+        this.loadChildrenStack.pop();
+        if (this.loadChildrenStack.length == 0) {
+            this.progress = false;
+        }
+        console.log("pop" + this.loadChildrenStack.length);
+    }
+
+    public checkloadChildrenStackSize() {
+        if (this.loadChildrenStack.length == 0) {
+            this.progress = false;
+        }
     }
 
 }

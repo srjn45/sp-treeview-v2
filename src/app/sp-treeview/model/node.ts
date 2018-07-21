@@ -12,46 +12,34 @@ export class Node {
      *
      * @param node
      */
-    public static nodify(obj: any, passByRef = true): Node {
-        if (passByRef) {
-            // node
-            const node: Node = Object.setPrototypeOf(obj, Node.prototype);
-            // nodeState
-            if (node.nodeState == null) {
-                node.nodeState = new NodeState();
-            } else {
-                node.nodeState = Object.setPrototypeOf(node.nodeState, NodeState.prototype);
-            }
-            // nodeLevelConfig
-            if (node.nodeLevelConfig == null) {
-                node.nodeLevelConfig = new NodeLevelConfig();
-            } else {
-                node.nodeLevelConfig = Object.setPrototypeOf(node.nodeLevelConfig, NodeLevelConfig.prototype);
-            }
-            // children
-            if (node.children != null) {
-                node.children.forEach(n => this.nodify(n));
-            }
-            return node;
+    public static nodify(obj: any): Node {
+        const node: Node = Object.setPrototypeOf(obj, Node.prototype);
+        // nodeState
+        if (node.nodeState == null || node.nodeState == undefined) {
+            node.nodeState = new NodeState();
         } else {
-            // node
-            const _node: Node = <Node>obj;
-            const node: Node = new Node(_node.name, _node.value, _node.children, _node.progress, _node.nodeState, _node.nodeLevelConfig);
-            // nodeState
-            node.nodeState = new NodeState(node.nodeState.checked, node.nodeState.collapsed, node.nodeState.disabled, node.nodeState.hidden);
-            // nodeLevelConfig
-            const nodeLevelConfig = new NodeLevelConfig();
-            Object.assign(nodeLevelConfig, node.nodeLevelConfig);
-            node.nodeLevelConfig = nodeLevelConfig;
-            // children
-            if (node.children != null) {
-                const _children: Node[] = [];
-                node.children.forEach(n => _children.push(this.nodify(n, false)));
-                node.children = _children;
-            }
-            return node;
+            node.nodeState = Object.setPrototypeOf(node.nodeState, NodeState.prototype);
         }
+        // nodeLevelConfig
+        if (node.nodeLevelConfig == null || node.nodeLevelConfig == undefined) {
+            node.nodeLevelConfig = new NodeLevelConfig();
+        } else {
+            node.nodeLevelConfig = Object.setPrototypeOf(node.nodeLevelConfig, NodeLevelConfig.prototype);
+        }
+        // children
+        if (node.children != null) {
+            node.children.forEach(child => { this.nodify(child); child.parent = node; });
+        }
+        return node;
     }
+
+    public static toNodeArray(objArr: any[]): Node[] {
+        let nodes: Node[] = [];
+        objArr.forEach(obj => { nodes.push(new Node(obj.name, obj.value, obj.children, obj.progress, obj.nodeState, obj.nodeLevelConfig)); });
+        return nodes;
+    }
+
+    private _parent: Node;
 
     constructor(
         private _name: string,
@@ -87,10 +75,12 @@ export class Node {
     }
 
     public set children(children: Node[]) {
-        this._children = [];
-        children.forEach(child =>
-            this._children.push(Node.nodify(child))
-        )
+        this._children = children;
+    }
+
+    public loadChildren(children: any[]) {
+        // children.forEach(child => Node.nodify(child));
+        this._children = children;
         this._progress = false;
         this._nodeState.collapsed = false;
         this.verifyStateRecursive();
@@ -123,11 +113,20 @@ export class Node {
         this._nodeLevelConfig = nodeLevelConfig;
     }
 
+    public get parent(): Node {
+        return this._parent;
+    }
+
+    public set parent(node: Node) {
+        this._parent = node;
+    }
+
     public addChild(child: Node) {
         if (this._children === null || this._children === undefined) {
             this._children = [];
         }
         this._children.push(Node.nodify(child));
+        Node.nodify(this);
     }
 
 

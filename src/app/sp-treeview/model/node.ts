@@ -6,6 +6,7 @@ import { NodeLevelConfig } from './node-level-config';
 export class Node {
 
     private config: Config;
+    private loadChildrenEvent: EventEmitter<Node>;
 
     /**
      * recursively sets prototype Node on the object and its children
@@ -39,7 +40,7 @@ export class Node {
         return nodes;
     }
 
-    private _parent: Node;
+    private _parent: Node = null;
 
     constructor(
         private _name: string,
@@ -81,12 +82,24 @@ export class Node {
     public loadChildren(children: any[]) {
         // children.forEach(child => Node.nodify(child));
         this._children = children;
+        Node.nodify(this);
+        this.setConfigRecursively(this.config);
         this._progress = false;
         this._nodeState.collapsed = false;
         this.verifyStateRecursive();
-        if (this.config != null && (this.config.treeLevelConfig.searchStr != null || this.config.treeLevelConfig.searchStr != '')) {
-            this.config.treeLevelConfig.treeview.applySearch();
+        console.log(typeof this.config.treeLevelConfig.searchStr);
+        if (this.config.treeLevelConfig.searchStr != null && this.config.treeLevelConfig.searchStr != '') {
+            this._children.forEach(child => child.filter(this.config.treeLevelConfig.searchStr, this.loadChildrenEvent));
         }
+        this.config.treeLevelConfig.childrenLoaded();
+    }
+
+    public addChild(child: Node) {
+        if (this._children === null || this._children === undefined) {
+            this._children = [];
+        }
+        this._children.push(Node.nodify(child));
+        Node.nodify(this);
     }
 
     public get progress(): boolean {
@@ -121,14 +134,12 @@ export class Node {
         this._parent = node;
     }
 
-    public addChild(child: Node) {
-        if (this._children === null || this._children === undefined) {
-            this._children = [];
+    public setConfigRecursively(config: Config) {
+        this.config = config;
+        if (this.children != null) {
+            this.children.forEach(child => child.setConfigRecursively(config));
         }
-        this._children.push(Node.nodify(child));
-        Node.nodify(this);
     }
-
 
     public verifyStateRecursive() {
         if (this.children == null) {
@@ -196,11 +207,21 @@ export class Node {
         return [];
     }
 
-    public filter(text: string, config: Config, loadChildren: EventEmitter<Node>): boolean {
-        this.config = config;
+    public expandAndShowParentRecursively() {
+        if (this.parent != null) {
+            this.parent.nodeState.hidden = false;
+            this.parent.nodeState.collapsed = false;
+            this.parent.expandAndShowParentRecursively();
+        }
+        this.config.treeLevelConfig.checkloadChildrenStackSize();
+    }
+
+    public filter(text: string, loadChildren: EventEmitter<Node>): boolean {
+        this.loadChildrenEvent = loadChildren;
         if (this.children == null) {
             if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
                 this.nodeState.hidden = false;
+                this.expandAndShowParentRecursively();
                 return true;
             } else {
                 this.nodeState.hidden = true;
@@ -213,7 +234,7 @@ export class Node {
             }
             let matchFound = false;
             this.children.forEach(child => {
-                let childMatchFound = child.filter(text, config, loadChildren);
+                let childMatchFound = child.filter(text, loadChildren);
                 if (!matchFound) {
                     matchFound = childMatchFound;
                 }
@@ -221,11 +242,13 @@ export class Node {
             if (matchFound) {
                 this.nodeState.hidden = false;
                 this.nodeState.collapsed = false;
+                this.expandAndShowParentRecursively();
                 return true;
             } else {
                 this.nodeState.collapsed = true;
                 if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
                     this.nodeState.hidden = false;
+                    this.expandAndShowParentRecursively();
                     return true;
                 } else {
                     this.nodeState.hidden = true;

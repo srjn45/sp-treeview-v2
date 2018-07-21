@@ -47,14 +47,11 @@ export class SpTreeviewDropdownComponent implements OnInit {
   }
 
   ngOnInit() {
-    const _nodes: Node[] = []
     this.nodes.forEach(n => {
       n = Node.nodify(n);
       n.verifyStateRecursive();
       n.getCheckedValues().forEach(v => this.selectedNodes.push(v));
-      _nodes.push(n);
     });
-    this.nodes = _nodes;
     this.chipsDiv = this.chipList._elementRef.nativeElement.children[0];
     this.dropDown = this.config.dropdownLevelConfig.showDropdownDefault;
   }

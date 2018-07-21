@@ -40,9 +40,7 @@ export class SpTreeviewComponent implements OnInit {
 
   ngOnInit() {
     this.config.treeLevelConfig.treeview = this;
-    const _nodes: Node[] = [];
-    this.nodes.forEach(n => _nodes.push(Node.nodify(n)));
-    this.nodes = _nodes;
+    this.nodes.forEach(n => Node.nodify(n));
   }
 
   public getSelectedValues(): Node[] {

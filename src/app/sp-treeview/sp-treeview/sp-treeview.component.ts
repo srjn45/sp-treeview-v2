@@ -40,7 +40,7 @@ export class SpTreeviewComponent implements OnInit {
 
   ngOnInit() {
     this.config.treeLevelConfig.treeview = this;
-    this.nodes.forEach(n => Node.nodify(n));
+    this.nodes.forEach(n => { Node.nodify(n); n.setConfigRecursively(this.config); });
   }
 
   public getSelectedValues(): Node[] {
@@ -58,7 +58,7 @@ export class SpTreeviewComponent implements OnInit {
   applySearch() {
     this.config.treeLevelConfig.progress = true;
     this.trees.forEach(t => t.search(this.config.treeLevelConfig.searchStr));
-    this.config.treeLevelConfig.progress = false;
+    // this.config.treeLevelConfig.progress = false;
   }
 
   onChange(nodes: Node[]) {
@@ -83,6 +83,7 @@ export class SpTreeviewComponent implements OnInit {
 
   onLoadChildren(node: Node) {
     this.loadChildren.emit(node);
+    this.config.treeLevelConfig.loadChildren();
   }
 
 }

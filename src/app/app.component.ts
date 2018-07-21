@@ -40,18 +40,21 @@ export class AppComponent {
     { parent: '1', node: new Node('Nevada', 'NV', []) },
     { parent: 'NV', node: new Node('Las Vegas', '702') },
     { parent: 'NV', node: new Node('Carson City', '775') },
-    { parent: '0', node: <Node>{ name: 'Test', value: '345' } },
+    { parent: '0', node: { name: 'Test', value: '345', children: [] } },
+    { parent: '345', node: { name: 'Test', value: '3451' } },
+    { parent: '345', node: { name: 'Test', value: '3452' } },
   ];
 
   contextPrototype = SpTreeviewNodeTemplateContext.prototype;
 
   constructor() {
-    this.nodes = this._dataSource.filter(d => d.parent === '0').map(d => d.node);
+    this.nodes = Node.toNodeArray(this._dataSource.filter(d => d.parent === '0').map(d => d.node));
   }
 
   onLoadChildren(node: Node) {
     setTimeout(() => {
-      node.children = this._dataSource.filter(d => d.parent === node.value).map(d => d.node);
+      node.loadChildren(Node.toNodeArray(this._dataSource.filter(d => d.parent === node.value).map(d => d.node)));
+      console.log(node);
     }, 3000);
   }
 

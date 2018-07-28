@@ -6,6 +6,7 @@ import { SpTreeviewNodeTemplate } from '../model/sp-treeview-node-template';
 import { SpTreeviewNodeTemplateContext } from '../model/sp-treeview-node-template-context';
 import { Node } from '../model/node';
 import { SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE } from '../model/tree-level-config';
+import { MatCheckboxChange, MatRadioChange } from '@angular/material';
 
 @Component({
   selector: 'sp-treeview',
@@ -21,6 +22,8 @@ export class SpTreeviewComponent implements OnInit {
   public CHECKED = CHECKED;
   public UNCHECKED = UNCHECKED;
   public INDETERMINATE = INDETERMINATE;
+
+  all = new Node('All', 'ALL');
 
   @Input() nodes: Node[];
   @Input() config: Config = new Config();
@@ -67,8 +70,21 @@ export class SpTreeviewComponent implements OnInit {
       this.trees.forEach(t => {
         t.node.getCheckedValues().forEach(v => values.push(v))
       });
-      this.change.emit(values);
+      let isAllChecked = true;
+      this.nodes.forEach(node => {
+        if (node.nodeState.checked != CHECKED) {
+          isAllChecked = false;
+        }
+      })
+      if (isAllChecked) {
+        this.all.nodeState.checked = CHECKED;
+        this.change.emit([this.all]);
+      } else {
+        this.all.nodeState.checked = UNCHECKED;
+        this.change.emit(values);
+      }
     } else if (this.config.treeLevelConfig.select === SELECT_RADIO) {
+      this.all.nodeState.checked = UNCHECKED;
       this.change.emit(nodes);
     }
   }
@@ -84,6 +100,25 @@ export class SpTreeviewComponent implements OnInit {
   onLoadChildren(node: Node) {
     this.loadChildren.emit(node);
     this.config.treeLevelConfig.loadChildren();
+  }
+
+  onAllRadioChange(event: MatRadioChange) {
+    this.change.emit([this.all]);
+  }
+
+  onAllCheckChange(event: MatCheckboxChange) {
+    this.nodes.forEach(node => {
+      node.setCheckedRecursively(event.checked);
+    });
+    if (event.checked) {
+      this.change.emit([this.all]);
+    } else {
+      this.change.emit([]);
+    }
+  }
+
+  onAddRoot() {
+    this.addChild.emit(this.all);
   }
 
 }

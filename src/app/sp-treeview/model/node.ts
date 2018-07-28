@@ -265,4 +265,17 @@ export class Node {
             });
         }
     }
+
+    public setCheckedRecursively(checked: boolean) {
+        if (checked) {
+            this.nodeState.checked = CHECKED;
+        } else {
+            this.nodeState.checked = UNCHECKED;
+        }
+        if (this.children) {
+            this.children.forEach(child => {
+                child.setCheckedRecursively(checked);
+            });
+        }
+    }
 }

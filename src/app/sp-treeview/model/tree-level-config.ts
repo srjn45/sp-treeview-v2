@@ -16,6 +16,7 @@ export class TreeLevelConfig {
     constructor(
         // make service call for children once or always
         private _loadOnce = true,
+        private _allNode = true,
         private _select = SELECT_NONE,
         private _deleteNode = false,
         private _addChild = false,
@@ -38,6 +39,14 @@ export class TreeLevelConfig {
 
     public set loadOnce(loadOnce: boolean) {
         this._loadOnce = loadOnce;
+    }
+
+    public get allNode(): boolean {
+        return this._allNode;
+    }
+
+    public set allNode(allNode: boolean) {
+        this._allNode = allNode;
     }
 
     public get select(): number {

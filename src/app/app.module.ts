@@ -1,6 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { MatProgressBarModule, MatCheckboxModule, MatRadioModule, MatButtonModule, MatIconModule } from "@angular/material";
+import { MatProgressBarModule, MatCheckboxModule, MatRadioModule, MatButtonModule, MatIconModule, MatDividerModule } from "@angular/material";
 
 import { AppComponent } from './app.component';
 import { SpTreeviewModule } from './sp-treeview/sp-treeview.module';
@@ -18,6 +18,7 @@ import { SpTreeviewModule } from './sp-treeview/sp-treeview.module';
     MatButtonModule,
     MatIconModule,
     MatProgressBarModule,
+    MatDividerModule,
     SpTreeviewModule
   ],
   providers: [],

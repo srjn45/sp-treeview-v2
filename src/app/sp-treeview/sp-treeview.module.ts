@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { SpTreeviewNodeComponent } from './sp-treeview-node/sp-treeview-node.component';
 import {
   MatProgressBarModule, MatCheckboxModule, MatRadioModule, MatButtonModule, MatIconModule,
-  MatInputModule, MatFormFieldModule, MatChipsModule
+  MatInputModule, MatFormFieldModule, MatChipsModule, MatDividerModule
 } from '@angular/material';
 import { SpTreeviewComponent } from './sp-treeview/sp-treeview.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -21,7 +21,8 @@ import { SpTreeviewDropdownComponent } from './sp-treeview-dropdown/sp-treeview-
     MatIconModule,
     MatInputModule,
     MatFormFieldModule,
-    MatChipsModule
+    MatChipsModule,
+    MatDividerModule
   ],
   declarations: [SpTreeviewNodeComponent, SpTreeviewComponent, SpTreeviewOverlayComponent, SpTreeviewDropdownComponent],
   exports: [

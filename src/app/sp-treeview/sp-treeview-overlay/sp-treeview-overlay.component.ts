@@ -50,6 +50,7 @@ export class SpTreeviewOverlayComponent implements OnInit {
       n.verifyStateRecursive();
       n.getCheckedValues().forEach(v => this.selectedNodes.push(v));
     });
+    this.config.dropdownLevelConfig.height = 'calc(100vh - 125px)';
     this.chipsDiv = this.chipList._elementRef.nativeElement.children[0];
     this.dropDown = this.config.dropdownLevelConfig.showDropdownDefault;
   }

@@ -1,6 +1,6 @@
 {
   "name": "sp-treeview-v2",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "license": "MIT",
   "scripts": {
     "ng": "ng",
@@ -11,6 +11,15 @@
     "e2e": "ng e2e",
     "packagr": "ng-packagr -p ng-package.json"
   },
+  "keywords": [
+    "angular",
+    "treeview",
+    "tree",
+    "hierarchy",
+    "dropdown",
+    "angular4",
+    "angular5"
+  ],
   "private": false,
   "dependencies": {
     "@angular/animations": "^5.2.11",

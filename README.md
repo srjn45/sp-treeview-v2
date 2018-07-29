@@ -19,6 +19,10 @@ To install this library, run:
 $ npm install sp-treeview-v2 --save
 ```
 
+## Demo
+
+https://srjn45.github.io/#/sp-treeview
+
 ## Consuming your library
 
 Add it in your `AppModule`:

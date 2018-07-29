@@ -25,14 +25,18 @@
             (change)="onAllCheckChange($event)">
             &nbsp;{{all.name}}&nbsp;&nbsp;
           </mat-checkbox>
+          <!-- node name -->
+          <label *ngIf="config.treeLevelConfig.select===SELECT_NONE">
+            &nbsp;{{all.name}}&nbsp;&nbsp;
+          </label>
         </span>
         <span>
           <button mat-icon-button class="btn-small" *ngIf="config.treeLevelConfig.addChild" (click)="onAddRoot()">
             <mat-icon class="icon-small" color="primary">add</mat-icon>
           </button>
         </span>
+        <mat-divider></mat-divider>
       </div>
-      <mat-divider></mat-divider>
       <sp-treeview-node #tree *ngFor="let node of nodes;let i = index" [template]="template?template:nodeTemplate" [contextPrototype]="contextPrototype"
         [node]="node" [config]="config" (radioSelect)="onChange($event)" (checkboxSelect)="onChange($event)" (delete)="onDelete($event)"
         (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)"></sp-treeview-node>

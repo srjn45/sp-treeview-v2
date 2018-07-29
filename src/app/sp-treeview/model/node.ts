@@ -278,4 +278,12 @@ export class Node {
             });
         }
     }
+
+    public removeMe() {
+        if (this.parent == null) {
+            this.config.treeLevelConfig.treeview.nodes = this.config.treeLevelConfig.treeview.nodes.filter(node => node.value != this.value);
+        } else {
+            this.parent.children = this.parent.children.filter(child => child.value != this.value);
+        }
+    }
 }

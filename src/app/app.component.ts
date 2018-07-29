@@ -60,6 +60,7 @@ export class AppComponent {
 
   onDelete(node: Node) {
     console.log("Delete" + JSON.stringify(node.name));
+    node.removeMe();
   }
 
   onAddChild(node: Node) {

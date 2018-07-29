@@ -11,6 +11,10 @@ An angular (2/4/5) plugin to display treeview
 - add child node (freedom to create your own form to add child)
 - search the tree
 
+## Demo
+
+https://srjn45.github.io/#/sp-treeview
+
 ## Installation
 
 To install this library, run:
@@ -18,10 +22,6 @@ To install this library, run:
 ```bash
 $ npm install sp-treeview-v2 --save
 ```
-
-## Demo
-
-https://srjn45.github.io/#/sp-treeview
 
 ## Consuming your library
 
@@ -73,6 +73,8 @@ or
 ```
 
 ```typescript
+
+  // app.component.ts
 
   nodes: Node[] = [];
   config: new Config();

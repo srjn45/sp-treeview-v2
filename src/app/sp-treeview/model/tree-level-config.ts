@@ -13,6 +13,9 @@ export class TreeLevelConfig {
 
     private loadChildrenStack = [];
 
+    private _progress = false;
+    private _searchStr = '';
+
     constructor(
         // make service call for children once or always
         private _loadOnce = true,
@@ -20,9 +23,7 @@ export class TreeLevelConfig {
         private _select = SELECT_NONE,
         private _deleteNode = false,
         private _addChild = false,
-        private _search = true,
-        private _progress = false,
-        private _searchStr = '',
+        private _search = true
     ) { }
 
     public get treeview(): SpTreeviewComponent {

@@ -1,10 +1,14 @@
-<sp-treeview-dropdown [placeholder]="'placeholder'" [nodes]="nodes" [config]="config" (delete)="onDelete($event)" (addChild)="onAddChild($event)"
+<sp-treeview-dropdown [placeholder]="'placeholder'" [nodes]="nodes" [config]="configDropdown" (delete)="onDelete($event)" (addChild)="onAddChild($event)"
   (loadChildren)="onLoadChildren($event)" (change)="onChange($event)">
 </sp-treeview-dropdown>
 
-<sp-treeview-overlay [placeholder]="'placeholder'" [nodes]="nodes" [config]="config" (delete)="onDelete($event)" (addChild)="onAddChild($event)"
+<sp-treeview-overlay [placeholder]="'placeholder'" [nodes]="nodes" [config]="configOverlay" (delete)="onDelete($event)" (addChild)="onAddChild($event)"
   (loadChildren)="onLoadChildren($event)" (change)="onChange($event)">
 </sp-treeview-overlay>
+
+<sp-treeview [nodes]="nodes" [config]="config" (delete)="onDelete($event)" (addChild)="onAddChild($event)"
+  (loadChildren)="onLoadChildren($event)" (change)="onChange($event)">
+</sp-treeview>
 
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <ng-template #nodeTemplate let-node="node" let-config="config" let-onCollapseExpand="onCollapseExpand" let-onCheckChange="onCheckChange"

@@ -22,7 +22,10 @@ export class AppComponent {
   public UNCHECKED = UNCHECKED;
   public INDETERMINATE = INDETERMINATE;
 
-  config = new Config(new TreeLevelConfig(true, true, SELECT_CHECKBOX, true, true, true), new DropdownLevelConfig('200px'));
+  configDropdown = new Config(new TreeLevelConfig(true, true, SELECT_CHECKBOX, true, true, true), new DropdownLevelConfig('200px'));
+  configOverlay = new Config(new TreeLevelConfig(true, true, SELECT_CHECKBOX, true, true, true));
+  config = new Config(new TreeLevelConfig(true, true, SELECT_CHECKBOX, true, true, true));
+
   nodes: Node[] = [];
 
   _dataSource = [

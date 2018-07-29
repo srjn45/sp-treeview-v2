@@ -13,7 +13,7 @@
   </div>
   <div class="treeview-content" [style.height]="config.dropdownLevelConfig.height">
     <mat-radio-group>
-      <div class="treeview-all">
+      <div class="treeview-all" *ngIf="config.treeLevelConfig.allNode">
         <span>
           <!-- radio button -->
           <mat-radio-button *ngIf="config.treeLevelConfig.select===SELECT_RADIO" [value]="all" [checked]="all.nodeState.checked===CHECKED"

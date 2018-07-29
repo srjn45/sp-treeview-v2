@@ -8,7 +8,7 @@ An angular (2/4/5) plugin to display treeview
 - single-select node with radio button
 - multi-select nodes with checkbox
 - delete node
-- add child node
+- add child node (freedom to create your own form to add child)
 - search the tree
 
 ## Installation
@@ -67,6 +67,43 @@ or
 <sp-treeview-overlay [placeholder]="'placeholder'" [nodes]="nodes" [config]="config" (delete)="onDelete($event)" (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)" (change)="onChange($event)"></sp-treeview-overlay>
 
 ```
+
+```typescript
+
+  nodes: Node[] = [];
+  config: new Config();
+
+  constructor() {
+    this.nodes = Node.toNodeArray(/*json response from service call*/);
+  }
+
+  onLoadChildren(node: Node) {
+    // service call to load children of node
+    node.loadChildren(Node.toNodeArray(/*response from service call*/));
+  }
+
+  onDelete(node: Node) {
+    // make service call to delete the node
+    // on success
+    node.removeMe(); // issue with removing root node refresh tree until fixed
+    // on failure notify user
+  }
+
+  onAddChild(node: Node) {
+    // create & open form to add new node
+    // onSubmit make a service call
+    // on success response 
+    node.addChild(Node.toNodeArray([/*newly created child node*/])[0]);
+    // on failure response notify user
+  }
+
+  onChange(nodes: Node[]) {
+    // selected nodes can be saved locally and then sent on form submit or directly make the service call.
+  }
+
+```
+
+toNodeArray(any[]):Node[] {...} - this method converts simple json object to Node object
 
 ## Usage
 

@@ -1,6 +1,6 @@
 {
   "name": "sp-treeview-v2",
-  "version": "2.1.9",
+  "version": "2.2.0",
   "license": "MIT",
   "scripts": {
     "ng": "ng",
@@ -20,6 +20,13 @@
     "angular4",
     "angular5"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/srjn45/sp-treeview-v2"
+  },
+  "bugs": {
+    "url": "https://github.com/srjn45/sp-treeview-v2/issues"
+  },
   "private": false,
   "dependencies": {
     "@angular/animations": "^5.2.11",

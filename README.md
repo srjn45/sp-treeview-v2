@@ -177,6 +177,14 @@ following properties are handled internally
 - height = 'auto' - hieght of the treeview in dropdown
 - showDropdownDefault = false - show/hide dropdown by default
 
+## Source Code
+
+https://github.com/srjn45/sp-treeview-v2
+
+## Report Issue
+
+https://github.com/srjn45/sp-treeview-v2/issues
+
 ## License
 
 MIT © [srjn45](mailto:srajanpathak45@gmail.com)

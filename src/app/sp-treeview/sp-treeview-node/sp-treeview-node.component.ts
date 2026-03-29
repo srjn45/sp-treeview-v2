@@ -21,56 +21,45 @@ export class SpTreeviewNodeComponent implements OnInit {
   public UNCHECKED = UNCHECKED;
   public INDETERMINATE = INDETERMINATE;
 
-  @Input() public template: TemplateRef<SpTreeviewNodeTemplate>;
+  @Input() public template!: TemplateRef<SpTreeviewNodeTemplate>;
   @Input() public contextPrototype: any;
 
-  @Input() public node: Node;
+  @Input() public node!: Node;
   @Input() public config: Config = new Config();
 
-  @Output() public radioSelect: EventEmitter<Node[]> = new EventEmitter<Node[]>();
-  @Output() public checkboxSelect: EventEmitter<null> = new EventEmitter<null>();
+  @Output() public radioSelect = new EventEmitter<Node[]>();
+  @Output() public checkboxSelect = new EventEmitter<void>();
+  @Output() public delete = new EventEmitter<Node>();
+  @Output() public addChild = new EventEmitter<Node>();
+  @Output() public loadChildren = new EventEmitter<Node>();
 
-  @Output() public delete: EventEmitter<Node> = new EventEmitter<Node>();
-  @Output() public addChild: EventEmitter<Node> = new EventEmitter<Node>();
-  @Output() public loadChildren: EventEmitter<Node> = new EventEmitter<Node>();
-
-  public context = new SpTreeviewNodeTemplateContext();
-
-  constructor() {
-
-  }
+  public context!: SpTreeviewNodeTemplateContext;
 
   ngOnInit() {
-    // set input context prototype
-    this.context = Object.setPrototypeOf(this.context, this.contextPrototype);
-    // input
+    // Create context with the supplied prototype so custom context classes work.
+    // Object.create is the correct way to use prototype-based delegation.
+    this.context = Object.create(
+      this.contextPrototype ?? SpTreeviewNodeTemplateContext.prototype
+    ) as SpTreeviewNodeTemplateContext;
+
     this.context.node = this.node;
     this.context.config = this.config;
-    // output
     this.context.addChild = this.addChild;
     this.context.delete = this.delete;
     this.context.loadChildren = this.loadChildren;
-    this.context.checkboxSelect = this.checkboxSelect;
+    this.context.checkboxSelect = this.checkboxSelect as any;
     this.context.radioSelect = this.radioSelect;
   }
 
-  onDelete = (node: Node) => {
-    this.delete.emit(node);
-  }
-
-  onAddChild = (node: Node) => {
-    this.addChild.emit(node);
-  }
-
-  onLoadChildren = (node: Node) => {
-    this.loadChildren.emit(node);
-  }
+  onDelete = (node: Node) => this.delete.emit(node);
+  onAddChild = (node: Node) => this.addChild.emit(node);
+  onLoadChildren = (node: Node) => this.loadChildren.emit(node);
 
   onRadioChange(nodes: Node[]) {
     this.radioSelect.emit(nodes);
   }
 
-  onCheckChange(nodes: Node[]) {
+  onCheckChange(_nodes: Node[]) {
     this.node.checkImmediateChildren();
     this.checkboxSelect.emit();
   }
@@ -79,4 +68,7 @@ export class SpTreeviewNodeComponent implements OnInit {
     return this.node.filter(text, (node) => this.loadChildren.emit(node));
   }
 
+  trackByValue(_index: number, node: Node): any {
+    return node.value;
+  }
 }

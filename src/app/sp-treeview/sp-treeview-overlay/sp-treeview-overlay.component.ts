@@ -26,9 +26,9 @@ export class SpTreeviewOverlayComponent implements OnInit {
   @Output() addChild: EventEmitter<Node> = new EventEmitter<Node>();
   @Output() loadChildren: EventEmitter<Node> = new EventEmitter<Node>();
 
-  @ViewChild(SpTreeviewComponent) tree: SpTreeviewComponent;
+  @ViewChild(SpTreeviewComponent, { static: false }) tree: SpTreeviewComponent;
 
-  @ViewChild('chipList')
+  @ViewChild('chipList', { static: true })
   public chipList: any;
   private chipsDiv: HTMLDivElement;
 

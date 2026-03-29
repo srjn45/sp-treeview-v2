@@ -100,18 +100,16 @@ export class TreeLevelConfig {
 
     public loadChildren() {
         this.loadChildrenStack.push(1);
-        console.log("push" + this.loadChildrenStack.length);
     }
     public childrenLoaded() {
         this.loadChildrenStack.pop();
-        if (this.loadChildrenStack.length == 0) {
+        if (this.loadChildrenStack.length === 0) {
             this.progress = false;
         }
-        console.log("pop" + this.loadChildrenStack.length);
     }
 
     public checkloadChildrenStackSize() {
-        if (this.loadChildrenStack.length == 0) {
+        if (this.loadChildrenStack.length === 0) {
             this.progress = false;
         }
     }

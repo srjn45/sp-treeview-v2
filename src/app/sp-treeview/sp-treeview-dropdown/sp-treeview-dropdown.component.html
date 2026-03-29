@@ -9,7 +9,7 @@
 
     <mat-chip-list #chipList>
       <mat-chip *ngFor="let node of selectedNodes" [selectable]="selectable" [removable]="removable" (remove)="remove(node)" (click)="$event.stopPropagation()">
-        {{ node.name.replace(' ',"&nbsp;") }}
+        {{ node.name }}
         <mat-icon matChipRemove *ngIf="removable">cancel</mat-icon>
       </mat-chip>
       <input mat-input [placeholder]="placeholder" [matChipInputFor]="chipList" [readonly]=true/>

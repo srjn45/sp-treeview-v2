@@ -87,8 +87,7 @@ export class Node {
         this._progress = false;
         this._nodeState.collapsed = false;
         this.verifyStateRecursive();
-        console.log(typeof this.config.treeLevelConfig.searchStr);
-        if (this.config.treeLevelConfig.searchStr != null && this.config.treeLevelConfig.searchStr != '') {
+        if (this.config.treeLevelConfig.searchStr != null && this.config.treeLevelConfig.searchStr !== '') {
             this._children.forEach(child => child.filter(this.config.treeLevelConfig.searchStr, this.loadChildrenEvent));
         }
         this.config.treeLevelConfig.childrenLoaded();
@@ -219,7 +218,7 @@ export class Node {
     public filter(text: string, loadChildren: EventEmitter<Node>): boolean {
         this.loadChildrenEvent = loadChildren;
         if (this.children == null) {
-            if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
+            if (this.name.toLowerCase().includes(text.toLowerCase())) {
                 this.nodeState.hidden = false;
                 this.expandAndShowParentRecursively();
                 return true;
@@ -246,7 +245,7 @@ export class Node {
                 return true;
             } else {
                 this.nodeState.collapsed = true;
-                if (this.name.toLowerCase().startsWith(text.toLowerCase())) {
+                if (this.name.toLowerCase().includes(text.toLowerCase())) {
                     this.nodeState.hidden = false;
                     this.expandAndShowParentRecursively();
                     return true;

@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, EventEmitter, Output, ViewChildren, QueryList, TemplateRef } from '@angular/core';
+import { Component, OnInit, Input, EventEmitter, Output, ViewChildren, QueryList, TemplateRef, OnDestroy } from '@angular/core';
 import { Config } from '../model/config';
 import { CHECKED, UNCHECKED, INDETERMINATE } from '../model/node-state';
 import { SpTreeviewNodeComponent } from '../sp-treeview-node/sp-treeview-node.component';
@@ -13,7 +13,7 @@ import { MatCheckboxChange, MatRadioChange } from '@angular/material';
   templateUrl: './sp-treeview.component.html',
   styleUrls: ['./sp-treeview.component.css']
 })
-export class SpTreeviewComponent implements OnInit {
+export class SpTreeviewComponent implements OnInit, OnDestroy {
 
   public SELECT_CHECKBOX = SELECT_CHECKBOX;
   public SELECT_RADIO = SELECT_RADIO;
@@ -39,6 +39,8 @@ export class SpTreeviewComponent implements OnInit {
 
   @ViewChildren('tree') trees: QueryList<SpTreeviewNodeComponent>;
 
+  private searchDebounceTimer: any = null;
+
   constructor() { }
 
   ngOnInit() {
@@ -46,22 +48,30 @@ export class SpTreeviewComponent implements OnInit {
     this.nodes.forEach(n => { Node.nodify(n); n.setConfigRecursively(this.config); });
   }
 
+  ngOnDestroy() {
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+    }
+  }
+
   public getSelectedValues(): Node[] {
-    let values: Node[];
+    const values: Node[] = [];
     this.nodes.forEach(n => n.getCheckedValues().forEach(v => values.push(v)));
     return values;
   }
 
   onSearch(event: Event) {
-    let str = (<HTMLInputElement>event.srcElement).value;
+    const str = (event.target as HTMLInputElement).value;
     this.config.treeLevelConfig.searchStr = str;
-    this.applySearch();
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+    }
+    this.searchDebounceTimer = setTimeout(() => this.applySearch(), 300);
   }
 
   applySearch() {
     this.config.treeLevelConfig.progress = true;
     this.trees.forEach(t => t.search(this.config.treeLevelConfig.searchStr));
-    // this.config.treeLevelConfig.progress = false;
   }
 
   onChange(nodes: Node[]) {

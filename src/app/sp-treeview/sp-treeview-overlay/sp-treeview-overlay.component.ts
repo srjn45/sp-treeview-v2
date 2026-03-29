@@ -66,7 +66,6 @@ export class SpTreeviewOverlayComponent implements OnInit {
   }
 
   remove(node: Node): void {
-    this.dropDown = !this.dropDown;
     node.nodeState.checked = UNCHECKED;
     this.nodes.forEach(n => n.checkImmediateChildren());
     let index = this.selectedNodes.findIndex(n => n === node);

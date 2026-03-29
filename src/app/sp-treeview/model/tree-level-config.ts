@@ -1,5 +1,3 @@
-import { SpTreeviewComponent } from '../sp-treeview/sp-treeview.component';
-
 export const SELECT_NONE = 0;
 export const SELECT_CHECKBOX = 1;
 export const SELECT_RADIO = 2;
@@ -8,22 +6,27 @@ export type SelectMode = typeof SELECT_NONE | typeof SELECT_CHECKBOX | typeof SE
 
 /**
  * Tree-wide behaviour configuration.
- * Internal runtime properties (treeview, progress, searchStr, loadChildrenStack)
- * are managed by SpTreeviewComponent and should not be set by consumers.
+ *
+ * Internal runtime properties (onRemoveRoot, progress, searchStr, loadChildrenStack)
+ * are wired by SpTreeviewComponent and must not be set by consumers.
  */
 export class TreeLevelConfig {
 
-    /** @internal set by SpTreeviewComponent on init */
-    treeview: SpTreeviewComponent;
-
-    /** @internal tracks in-flight lazy-load requests */
-    private loadChildrenStack: number[] = [];
+    /**
+     * @internal
+     * Callback registered by SpTreeviewComponent so that Node.removeMe() can
+     * remove a root-level node without holding a direct reference to the component.
+     */
+    onRemoveRoot: ((value: any) => void) | null = null;
 
     /** @internal current progress-bar state */
     progress: boolean = false;
 
     /** @internal current search term */
     searchStr: string = '';
+
+    /** @internal in-flight lazy-load counter */
+    private loadChildrenStack: number[] = [];
 
     constructor(
         public loadOnce: boolean = true,

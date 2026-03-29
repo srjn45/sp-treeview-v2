@@ -1,10 +1,8 @@
+import { EventEmitter } from '@angular/core';
 import { Node } from './node';
 import { Config } from './config';
-import { MatRadioChange, MatCheckboxChange } from '@angular/material';
-import { EventEmitter } from '@angular/core';
 
 export interface SpTreeviewNodeTemplate {
-
     node: Node;
     config: Config;
 
@@ -15,10 +13,9 @@ export interface SpTreeviewNodeTemplate {
     checkboxSelect: EventEmitter<null>;
 
     onCollapseExpand: (node: Node) => void;
-    onCheckChange: (node: MatCheckboxChange) => void;
-    onRadioChange: (node: MatRadioChange) => void;
+    onCheckChange: (event: { checked: boolean }) => void;
+    onRadioChange: (event: { value: Node }) => void;
     onDelete: (node: Node) => void;
     onAddChild: (node: Node) => void;
     onLoadChildren: (node: Node) => void;
-
 }

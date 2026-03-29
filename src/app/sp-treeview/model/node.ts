@@ -153,13 +153,10 @@ export class Node {
         this.children.push(child);
     }
 
-    /** Remove this node from its parent's children (or from the root list via the treeview ref). */
+    /** Remove this node from its parent's children, or from the root list if it is a root node. */
     public removeMe(): void {
         if (this.parent === null) {
-            const tv = this._config?.treeLevelConfig?.treeview;
-            if (tv) {
-                tv.nodes = tv.nodes.filter(n => n.value !== this.value);
-            }
+            this._config?.treeLevelConfig?.onRemoveRoot?.(this.value);
         } else {
             this.parent.children = this.parent.children.filter(c => c.value !== this.value);
         }

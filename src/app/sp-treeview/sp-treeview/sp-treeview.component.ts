@@ -1,12 +1,11 @@
 import { Component, OnInit, Input, EventEmitter, Output, ViewChildren, QueryList, TemplateRef, OnDestroy } from '@angular/core';
 import { Config } from '../model/config';
-import { CHECKED, UNCHECKED, INDETERMINATE } from '../model/node-state';
+import { CHECKED, UNCHECKED } from '../model/node-state';
 import { SpTreeviewNodeComponent } from '../sp-treeview-node/sp-treeview-node.component';
 import { SpTreeviewNodeTemplate } from '../model/sp-treeview-node-template';
 import { SpTreeviewNodeTemplateContext } from '../model/sp-treeview-node-template-context';
 import { Node } from '../model/node';
 import { SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE } from '../model/tree-level-config';
-import { MatCheckboxChange, MatRadioChange } from '@angular/material';
 
 @Component({
   selector: 'sp-treeview',
@@ -21,7 +20,6 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
 
   public CHECKED = CHECKED;
   public UNCHECKED = UNCHECKED;
-  public INDETERMINATE = INDETERMINATE;
 
   all = new Node('All', 'ALL');
 
@@ -32,7 +30,6 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
   @Input() contextPrototype = SpTreeviewNodeTemplateContext.prototype;
 
   @Output() change: EventEmitter<Node[]> = new EventEmitter<Node[]>();
-
   @Output() delete: EventEmitter<Node> = new EventEmitter<Node>();
   @Output() addChild: EventEmitter<Node> = new EventEmitter<Node>();
   @Output() loadChildren: EventEmitter<Node> = new EventEmitter<Node>();
@@ -44,11 +41,16 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
   constructor() { }
 
   ngOnInit() {
-    this.config.treeLevelConfig.treeview = this;
+    // Wire the root-removal callback so Node.removeMe() can remove root nodes
+    // without holding a direct reference to this component.
+    this.config.treeLevelConfig.onRemoveRoot = (value: any) => {
+      this.nodes = this.nodes.filter(n => n.value !== value);
+    };
     this.nodes.forEach(n => { Node.nodify(n); n.setConfigRecursively(this.config); });
   }
 
   ngOnDestroy() {
+    this.config.treeLevelConfig.onRemoveRoot = null;
     if (this.searchDebounceTimer) {
       clearTimeout(this.searchDebounceTimer);
     }
@@ -76,16 +78,9 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
 
   onChange(nodes: Node[]) {
     if (this.config.treeLevelConfig.select === SELECT_CHECKBOX) {
-      let values = [];
-      this.trees.forEach(t => {
-        t.node.getCheckedValues().forEach(v => values.push(v))
-      });
-      let isAllChecked = true;
-      this.nodes.forEach(node => {
-        if (node.nodeState.checked != CHECKED) {
-          isAllChecked = false;
-        }
-      })
+      const values: Node[] = [];
+      this.trees.forEach(t => t.node.getCheckedValues().forEach(v => values.push(v)));
+      const isAllChecked = this.nodes.every(node => node.nodeState.checked === CHECKED);
       if (isAllChecked) {
         this.all.nodeState.checked = CHECKED;
         this.change.emit([this.all]);
@@ -99,7 +94,7 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
     }
   }
 
-  onDelete(node) {
+  onDelete(node: Node) {
     this.delete.emit(node);
   }
 
@@ -112,23 +107,20 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
     this.config.treeLevelConfig.pushLoad();
   }
 
-  onAllRadioChange(event: MatRadioChange) {
+  onAllRadioChange() {
     this.change.emit([this.all]);
   }
 
-  onAllCheckChange(event: MatCheckboxChange) {
-    this.nodes.forEach(node => {
-      node.setCheckedRecursively(event.checked);
-    });
-    if (event.checked) {
-      this.change.emit([this.all]);
-    } else {
-      this.change.emit([]);
-    }
+  onAllCheckChange(event: { checked: boolean }) {
+    this.nodes.forEach(node => node.setCheckedRecursively(event.checked));
+    this.change.emit(event.checked ? [this.all] : []);
   }
 
   onAddRoot() {
     this.addChild.emit(this.all);
   }
 
+  trackByValue(_index: number, node: Node): any {
+    return node.value;
+  }
 }

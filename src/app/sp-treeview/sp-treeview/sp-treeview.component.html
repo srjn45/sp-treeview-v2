@@ -37,7 +37,7 @@
         </span>
         <mat-divider></mat-divider>
       </div>
-      <sp-treeview-node #tree *ngFor="let node of nodes;let i = index" [template]="template?template:nodeTemplate" [contextPrototype]="contextPrototype"
+      <sp-treeview-node #tree *ngFor="let node of nodes; trackBy: trackByValue" [template]="template?template:nodeTemplate" [contextPrototype]="contextPrototype"
         [node]="node" [config]="config" (radioSelect)="onChange($event)" (checkboxSelect)="onChange($event)" (delete)="onDelete($event)"
         (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)"></sp-treeview-node>
     </mat-radio-group>

@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, TemplateRef, EventEmitter, Output, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, Input, TemplateRef, EventEmitter, Output, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
 import { Config } from '../model/config';
 import { SpTreeviewNodeTemplate } from '../model/sp-treeview-node-template';
 import { SpTreeviewComponent } from '../sp-treeview/sp-treeview.component';
@@ -9,7 +9,8 @@ import { UNCHECKED } from '../model/node-state';
 @Component({
   selector: 'sp-treeview-dropdown',
   templateUrl: './sp-treeview-dropdown.component.html',
-  styleUrls: ['./sp-treeview-dropdown.component.css']
+  styleUrls: ['./sp-treeview-dropdown.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpTreeviewDropdownComponent implements OnInit {
 

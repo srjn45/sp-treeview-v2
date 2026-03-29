@@ -6,84 +6,78 @@
     width: 100%;
 }
 
-.pointer {
-    cursor: pointer;
-}
-
-.dropDown {
-    background: white;
-    position: absolute;
-    padding: 10px;
-    top: 60px;
-    width: calc(100% - 20px);
-    overflow: auto;
-    box-shadow: 0px 1px 2px 0px grey;
+.liftup {
     z-index: 1010;
+    position: relative;
 }
 
+/* Full-screen overlay panel */
 .overlay {
     position: fixed;
     background: white;
     padding: 10px;
     width: calc(100% - 40px);
-    height: calc(100% - 40px);
+    height: calc(100vh - 125px);
     top: 10px;
     left: 10px;
-    overflow: auto;
-    box-shadow: 0px 1px 2px 0px grey;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     z-index: 1010;
+    display: flex;
+    flex-direction: column;
 }
 
-.overlay>div.done {
-    /* position: absolute;
-    width: calc(100% - 20px);
-    bottom: 10px; */
+.overlay-tree {
+    flex: 1;
+    overflow: auto;
+}
+
+.overlay > div.done {
     display: flex;
     justify-content: flex-end;
+    padding-top: 8px;
+    flex-shrink: 0;
 }
 
 .cvr-screen {
     position: fixed;
-    top: 0px;
-    left: 0px;
+    top: 0;
+    left: 0;
     width: 100vw;
     height: 100vh;
     z-index: 1000;
+    background: rgba(0, 0, 0, 0.3);
 }
 
-.liftup {
-    z-index: 1010;
-}
-
-/* input.mat-chip-input {
-    display: none !important;
-} */
-
-.shrink ::ng-deep .mat-chip-list-wrapper {
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    overflow: hidden;
+/* Scrollable chip row */
+.chip-scroll {
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
     scroll-behavior: smooth;
-    height: 32px;
+    height: 36px;
+    width: 100%;
+    scrollbar-width: none;
 }
 
-.shrink ::ng-deep .mat-chip {
-    line-height: 10px;
-    font-size: 10px;
-    padding: 1px 5px;
+.chip-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.chip-placeholder {
+    color: rgba(0, 0, 0, 0.42);
+    font-size: 14px;
+    white-space: nowrap;
+    padding: 0 4px;
 }
 
 .slideUp {
-    height: 0px !important;
-    padding-top: 0px;
-    padding-bottom: 0px;
+    height: 0 !important;
+    padding: 0;
+    overflow: hidden;
 }
 
 * {
-    transition: all 0.3s;
-}
-
-.shrink ::ng-deep .mat-input-infix {
-    padding-top: 0px;
-    padding-bottom: 0px;
+    transition: height 0.3s, padding 0.3s;
 }

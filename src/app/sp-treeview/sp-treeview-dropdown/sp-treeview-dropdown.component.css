@@ -14,29 +14,27 @@
     background: white;
     position: absolute;
     padding: 10px;
-    top: 60px;
+    top: 64px;
     width: calc(100% - 20px);
     overflow: auto;
-    box-shadow: 0px 1px 2px 0px grey;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     z-index: 1010;
 }
 
-.dropDown>div.done {
-    /* position: absolute;
-    width: calc(100% - 20px);
-    bottom: 10px; */
+.dropDown > div.done {
     display: flex;
     justify-content: flex-end;
+    padding-top: 8px;
 }
 
 .top-shrink {
-    top: 46px !important;
+    top: 50px !important;
 }
 
 .cvr-screen {
     position: fixed;
-    top: 0px;
-    left: 0px;
+    top: 0;
+    left: 0;
     width: 100vw;
     height: 100vh;
     z-index: 1000;
@@ -46,36 +44,44 @@
     z-index: 1010;
 }
 
-/* input.mat-chip-input {
-    display: none !important;
-} */
-
-.shrink  ::ng-deep .mat-chip-list-wrapper {
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    overflow: hidden;
+/* Scrollable chip row */
+.chip-scroll {
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
     scroll-behavior: smooth;
-    height: 32px;
+    height: 36px;
+    width: 100%;
+    /* Hide scrollbar visually but keep it functional */
+    scrollbar-width: none;
 }
 
-.shrink ::ng-deep .mat-chip {
-    line-height: 10px;
-    font-size: 10px;
-    padding: 1px 5px;
+.chip-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.chip-placeholder {
+    color: rgba(0, 0, 0, 0.42);
+    font-size: 14px;
     white-space: nowrap;
+    padding: 0 4px;
+}
+
+/* Compact chip sizing */
+.shrink mat-chip-set {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
 }
 
 .slideUp {
-    height: 0px !important;
-    padding-top: 0px;
-    padding-bottom: 0px;
+    height: 0 !important;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
 }
 
 * {
-    transition: all 0.3s;
-}
-
-.shrink ::ng-deep .mat-input-infix {
-    padding-top: 0px;
-    padding-bottom: 0px;
+    transition: height 0.3s, padding 0.3s;
 }

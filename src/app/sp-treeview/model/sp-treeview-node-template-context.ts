@@ -1,8 +1,7 @@
+import { EventEmitter } from '@angular/core';
 import { SpTreeviewNodeTemplate } from './sp-treeview-node-template';
 import { Config } from './config';
 import { Node } from './node';
-import { EventEmitter } from '@angular/core';
-import { MatRadioChange, MatCheckboxChange } from '@angular/material';
 import { CHECKED, UNCHECKED } from './node-state';
 
 export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
@@ -16,14 +15,11 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
     addChild: EventEmitter<Node>;
     loadChildren: EventEmitter<Node>;
 
-    constructor() {
-
-    }
-
     public onCollapseExpand = (node: Node) => {
         node.unHideChildren();
         if (node.nodeState.collapsed) {
-            if ((this.config.treeLevelConfig.loadOnce && node.children.length === 0) || (!this.config.treeLevelConfig.loadOnce)) {
+            const loadOnce = this.config.treeLevelConfig.loadOnce;
+            if ((loadOnce && (node.children?.length ?? 0) === 0) || !loadOnce) {
                 node.progress = true;
                 this.loadChildren.emit(node);
                 return;
@@ -44,21 +40,18 @@ export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
         this.loadChildren.emit(node);
     }
 
-    public onRadioChange = (event: MatRadioChange) => {
+    public onRadioChange = (event: { value: Node }) => {
         this.radioSelect.emit([event.value]);
     }
 
     /**
-     * called when the checkbox value is changed
-     * sets checked value recursively
+     * Called when a checkbox value changes.
+     * Sets the checked state on this node and all its descendants,
+     * then notifies the parent component via checkboxSelect.
      */
-    public onCheckChange = (event: MatCheckboxChange) => {
-        // set new check status for this node and its children
+    public onCheckChange = (event: { checked: boolean }) => {
         this.node.nodeState.checked = event.checked ? CHECKED : UNCHECKED;
         this.node.changeChildrenRecursive();
-
-        // notify parent of the change
         this.checkboxSelect.emit();
     }
-
 }

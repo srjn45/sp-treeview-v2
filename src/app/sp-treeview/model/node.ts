@@ -1,288 +1,270 @@
 import { Config } from './config';
-import { EventEmitter } from '@angular/core';
-import { NodeState, CHECKED, UNCHECKED, INDETERMINATE } from './node-state';
+import { NodeState, CheckedState, CHECKED, UNCHECKED, INDETERMINATE } from './node-state';
 import { NodeLevelConfig } from './node-level-config';
+
+/** Plain data shape accepted by Node.fromJson() */
+export interface NodeLike {
+    name: string;
+    value: any;
+    children?: NodeLike[] | null;
+    progress?: boolean;
+    nodeState?: Partial<NodeState>;
+    nodeLevelConfig?: Partial<NodeLevelConfig>;
+}
 
 export class Node {
 
-    private config: Config;
-    private loadChildrenEvent: EventEmitter<Node>;
+    /** @internal set by SpTreeviewComponent on init */
+    private _config: Config;
+
+    /** @internal stored so filter() can trigger lazy loads after children arrive */
+    private _loadChildrenCb: ((node: Node) => void) | null = null;
+
+    // ── public data properties ──────────────────────────────────────────────
+
+    name: string;
+    value: any;
+    children: Node[] | null;
+    progress: boolean;
+    nodeState: NodeState;
+    nodeLevelConfig: NodeLevelConfig;
+    parent: Node | null = null;
+
+    // ── constructor ─────────────────────────────────────────────────────────
+
+    constructor(
+        name: string,
+        value: any,
+        children?: Node[] | null,
+        progress: boolean = false,
+        nodeState: NodeState = new NodeState(),
+        nodeLevelConfig: NodeLevelConfig = new NodeLevelConfig()
+    ) {
+        this.name = name;
+        this.value = value;
+        this.children = children === undefined ? null : children;
+        this.progress = progress;
+        this.nodeState = nodeState;
+        this.nodeLevelConfig = nodeLevelConfig;
+    }
+
+    // ── static factory ──────────────────────────────────────────────────────
 
     /**
-     * recursively sets prototype Node on the object and its children
-     *
-     * @param node
+     * Recursively convert a plain object (e.g. from JSON) into a Node tree.
+     * Replaces the old Object.setPrototypeOf anti-pattern.
      */
-    public static nodify(obj: any): Node {
-        const node: Node = Object.setPrototypeOf(obj, Node.prototype);
-        // nodeState
-        if (node.nodeState == null || node.nodeState == undefined) {
-            node.nodeState = new NodeState();
-        } else {
-            node.nodeState = Object.setPrototypeOf(node.nodeState, NodeState.prototype);
+    public static fromJson(obj: NodeLike): Node {
+        const nodeState = obj.nodeState
+            ? new NodeState(
+                (obj.nodeState.checked ?? UNCHECKED) as CheckedState,
+                obj.nodeState.collapsed ?? true,
+                obj.nodeState.disabled ?? false,
+                obj.nodeState.hidden ?? false
+            )
+            : new NodeState();
+
+        const nodeLevelConfig = obj.nodeLevelConfig
+            ? new NodeLevelConfig(
+                obj.nodeLevelConfig.deleteNode ?? null,
+                obj.nodeLevelConfig.addChild ?? null
+            )
+            : new NodeLevelConfig();
+
+        const children = obj.children
+            ? obj.children.map(c => Node.fromJson(c))
+            : (obj.children === null ? null : null);
+
+        const node = new Node(
+            obj.name,
+            obj.value,
+            children,
+            obj.progress ?? false,
+            nodeState,
+            nodeLevelConfig
+        );
+
+        if (node.children) {
+            node.children.forEach(child => { child.parent = node; });
         }
-        // nodeLevelConfig
-        if (node.nodeLevelConfig == null || node.nodeLevelConfig == undefined) {
-            node.nodeLevelConfig = new NodeLevelConfig();
-        } else {
-            node.nodeLevelConfig = Object.setPrototypeOf(node.nodeLevelConfig, NodeLevelConfig.prototype);
-        }
-        // children
-        if (node.children != null) {
-            node.children.forEach(child => { this.nodify(child); child.parent = node; });
+
+        return node;
+    }
+
+    /**
+     * Ensure any already-constructed Node (e.g. passed as plain @Input data)
+     * has proper parent back-references and config set.
+     * Used internally by the component on init.
+     */
+    public static nodify(node: Node): Node {
+        if (!node.nodeState) { node.nodeState = new NodeState(); }
+        if (!node.nodeLevelConfig) { node.nodeLevelConfig = new NodeLevelConfig(); }
+        if (node.children) {
+            node.children.forEach(child => {
+                child.parent = node;
+                Node.nodify(child);
+            });
         }
         return node;
     }
 
-    public static toNodeArray(objArr: any[]): Node[] {
-        let nodes: Node[] = [];
-        objArr.forEach(obj => { nodes.push(new Node(obj.name, obj.value, obj.children, obj.progress, obj.nodeState, obj.nodeLevelConfig)); });
-        return nodes;
+    /** Convert an array of plain objects to Node instances via fromJson(). */
+    public static toNodeArray(objArr: NodeLike[]): Node[] {
+        return objArr.map(obj => Node.fromJson(obj));
     }
 
-    private _parent: Node = null;
+    // ── config wiring (internal) ────────────────────────────────────────────
 
-    constructor(
-        private _name: string,
-        private _value: any,
-        private _children?: Node[],
-        private _progress = false,
-        private _nodeState = new NodeState(),
-        private _nodeLevelConfig = new NodeLevelConfig()
-    ) {
-        if (this._children == undefined || this._children === undefined) {
-            this._children = null;
-        }
+    public get config(): Config {
+        return this._config;
     }
 
-    public get name(): string {
-        return this._name;
-    }
-
-    public set name(name: string) {
-        this._name = name;
-    }
-
-    public get value(): any {
-        return this._value;
-    }
-
-    public set value(value: any) {
-        this._value = value;
-    }
-
-    public get children(): Node[] {
-        return this._children;
-    }
-
-    public set children(children: Node[]) {
-        this._children = children;
-    }
-
-    public loadChildren(children: any[]) {
-        // children.forEach(child => Node.nodify(child));
-        this._children = children;
-        Node.nodify(this);
-        this.setConfigRecursively(this.config);
-        this._progress = false;
-        this._nodeState.collapsed = false;
-        this.verifyStateRecursive();
-        if (this.config.treeLevelConfig.searchStr != null && this.config.treeLevelConfig.searchStr !== '') {
-            this._children.forEach(child => child.filter(this.config.treeLevelConfig.searchStr, this.loadChildrenEvent));
-        }
-        this.config.treeLevelConfig.childrenLoaded();
-    }
-
-    public addChild(child: Node) {
-        if (this._children === null || this._children === undefined) {
-            this._children = [];
-        }
-        this._children.push(Node.nodify(child));
-        Node.nodify(this);
-    }
-
-    public get progress(): boolean {
-        return this._progress;
-    }
-
-    public set progress(progress: boolean) {
-        this._progress = progress;
-    }
-
-    public get nodeState(): NodeState {
-        return this._nodeState;
-    }
-
-    public set nodeState(nodeState: NodeState) {
-        this._nodeState = nodeState;
-    }
-
-    public get nodeLevelConfig(): NodeLevelConfig {
-        return this._nodeLevelConfig;
-    }
-
-    public set nodeLevelConfig(nodeLevelConfig: NodeLevelConfig) {
-        this._nodeLevelConfig = nodeLevelConfig;
-    }
-
-    public get parent(): Node {
-        return this._parent;
-    }
-
-    public set parent(node: Node) {
-        this._parent = node;
-    }
-
-    public setConfigRecursively(config: Config) {
-        this.config = config;
-        if (this.children != null) {
+    public setConfigRecursively(config: Config): void {
+        this._config = config;
+        if (this.children) {
             this.children.forEach(child => child.setConfigRecursively(config));
         }
     }
 
-    public verifyStateRecursive() {
-        if (this.children == null) {
-            return;
-        }
+    // ── public mutation API ─────────────────────────────────────────────────
 
-        if (this._nodeState.checked === CHECKED) {
+    /** Call this inside your loadChildren event handler to inject fetched children. */
+    public loadChildren(children: Node[]): void {
+        this.children = children;
+        Node.nodify(this);
+        this.setConfigRecursively(this._config);
+        this.progress = false;
+        this.nodeState.collapsed = false;
+        this.verifyStateRecursive();
+        const searchStr = this._config?.treeLevelConfig?.searchStr;
+        if (searchStr && this._loadChildrenCb) {
+            this.children.forEach(child => child.filter(searchStr, this._loadChildrenCb));
+        }
+        this._config?.treeLevelConfig?.popLoad();
+    }
+
+    /** Append a new child node at runtime. */
+    public addChild(child: Node): void {
+        if (!this.children) {
+            this.children = [];
+        }
+        Node.nodify(child);
+        child.parent = this;
+        this.children.push(child);
+    }
+
+    /** Remove this node from its parent's children (or from the root list via the treeview ref). */
+    public removeMe(): void {
+        if (this.parent === null) {
+            const tv = this._config?.treeLevelConfig?.treeview;
+            if (tv) {
+                tv.nodes = tv.nodes.filter(n => n.value !== this.value);
+            }
+        } else {
+            this.parent.children = this.parent.children.filter(c => c.value !== this.value);
+        }
+    }
+
+    // ── state helpers ───────────────────────────────────────────────────────
+
+    public verifyStateRecursive(): void {
+        if (!this.children) { return; }
+        if (this.nodeState.checked === CHECKED) {
             this.changeChildrenRecursive();
             return;
         }
-
-        this.children.filter(n => n.children != null).forEach(n => n.verifyStateRecursive());
-
+        this.children.filter(n => n.children !== null).forEach(n => n.verifyStateRecursive());
         this.checkImmediateChildren();
     }
 
-    public changeChildrenRecursive() {
-        if (this.children == null) {
-            return;
-        }
+    public changeChildrenRecursive(): void {
+        if (!this.children) { return; }
         this.children.forEach(n => {
             n.nodeState.checked = this.nodeState.checked;
             n.changeChildrenRecursive();
         });
     }
 
-    public checkImmediateChildren() {
-        if (this.children && this.children.length > 0) {
-            this.children.forEach(c => c.checkImmediateChildren());
-
-            let checkedChildren: number = this.children.filter(n => n.nodeState.checked === CHECKED).length;
-
-            let indeterminateChildren: number = this.children.filter(n => n.nodeState.checked === INDETERMINATE).length;
-
-            if (indeterminateChildren > 0) {
-                // if indeterminate child the indeterminate
-                this.nodeState.checked = INDETERMINATE;
-            } else {
-                // if no indeterminate child
-                if (checkedChildren === this.children.length) {
-                    // if all checked then checked
-                    this.nodeState.checked = CHECKED;
-                } else if (checkedChildren === 0) {
-                    // if all unchecked then unchecked
-                    this.nodeState.checked = UNCHECKED;
-                } else {
-                    // if not all checked then indeterminate
-                    this.nodeState.checked = INDETERMINATE;
-                }
-            }
+    public checkImmediateChildren(): void {
+        if (!this.children || this.children.length === 0) { return; }
+        this.children.forEach(c => c.checkImmediateChildren());
+        const checkedCount = this.children.filter(n => n.nodeState.checked === CHECKED).length;
+        const indeterminateCount = this.children.filter(n => n.nodeState.checked === INDETERMINATE).length;
+        if (indeterminateCount > 0) {
+            this.nodeState.checked = INDETERMINATE;
+        } else if (checkedCount === this.children.length) {
+            this.nodeState.checked = CHECKED;
+        } else if (checkedCount === 0) {
+            this.nodeState.checked = UNCHECKED;
+        } else {
+            this.nodeState.checked = INDETERMINATE;
         }
     }
 
     public getCheckedValues(): Node[] {
-        if (this.nodeState.checked === CHECKED) {
-            return [this]
-        }
+        if (this.nodeState.checked === CHECKED) { return [this]; }
         if (this.children) {
-            let values = [];
-            this.children.forEach(n => {
-                n.getCheckedValues().forEach(v => values.push(v));
-            });
-            return values;
+            return this.children.flatMap(n => n.getCheckedValues());
         }
         return [];
     }
 
-    public expandAndShowParentRecursively() {
-        if (this.parent != null) {
+    public setCheckedRecursively(checked: boolean): void {
+        this.nodeState.checked = checked ? CHECKED : UNCHECKED;
+        if (this.children) {
+            this.children.forEach(child => child.setCheckedRecursively(checked));
+        }
+    }
+
+    public unHideChildren(): void {
+        if (this.children) {
+            this.children.forEach(child => { child.nodeState.hidden = false; });
+        }
+    }
+
+    public expandAndShowParentRecursively(): void {
+        if (this.parent !== null) {
             this.parent.nodeState.hidden = false;
             this.parent.nodeState.collapsed = false;
             this.parent.expandAndShowParentRecursively();
         }
-        this.config.treeLevelConfig.checkloadChildrenStackSize();
+        this._config?.treeLevelConfig?.syncProgress();
     }
 
-    public filter(text: string, loadChildren: EventEmitter<Node>): boolean {
-        this.loadChildrenEvent = loadChildren;
-        if (this.children == null) {
-            if (this.name.toLowerCase().includes(text.toLowerCase())) {
-                this.nodeState.hidden = false;
-                this.expandAndShowParentRecursively();
-                return true;
-            } else {
-                this.nodeState.hidden = true;
-                return false;
-            }
-        } else {
-            if (this.children.length === 0) {
-                this.progress = true;
-                loadChildren.emit(this);
-            }
-            let matchFound = false;
-            this.children.forEach(child => {
-                let childMatchFound = child.filter(text, loadChildren);
-                if (!matchFound) {
-                    matchFound = childMatchFound;
-                }
-            });
-            if (matchFound) {
-                this.nodeState.hidden = false;
-                this.nodeState.collapsed = false;
-                this.expandAndShowParentRecursively();
-                return true;
-            } else {
-                this.nodeState.collapsed = true;
-                if (this.name.toLowerCase().includes(text.toLowerCase())) {
-                    this.nodeState.hidden = false;
-                    this.expandAndShowParentRecursively();
-                    return true;
-                } else {
-                    this.nodeState.hidden = true;
-                    return false;
-                }
-            }
+    /**
+     * Recursively filter this node and its descendants by display name.
+     * @param text     search term
+     * @param onLoad   callback invoked when a lazy node needs to load children
+     */
+    public filter(text: string, onLoad: ((node: Node) => void) | null): boolean {
+        this._loadChildrenCb = onLoad;
+        if (this.children === null) {
+            const matches = this.name.toLowerCase().includes(text.toLowerCase());
+            this.nodeState.hidden = !matches;
+            if (matches) { this.expandAndShowParentRecursively(); }
+            return matches;
         }
-    }
 
-    public unHideChildren() {
-        if (this.children) {
-            this.children.forEach(child => {
-                child.nodeState.hidden = false;
-            });
+        if (this.children.length === 0 && onLoad) {
+            this.progress = true;
+            onLoad(this);
         }
-    }
 
-    public setCheckedRecursively(checked: boolean) {
-        if (checked) {
-            this.nodeState.checked = CHECKED;
-        } else {
-            this.nodeState.checked = UNCHECKED;
-        }
-        if (this.children) {
-            this.children.forEach(child => {
-                child.setCheckedRecursively(checked);
-            });
-        }
-    }
+        const childMatch = this.children.reduce((found, child) => {
+            return child.filter(text, onLoad) || found;
+        }, false);
 
-    public removeMe() {
-        if (this.parent == null) {
-            this.config.treeLevelConfig.treeview.nodes = this.config.treeLevelConfig.treeview.nodes.filter(node => node.value != this.value);
-        } else {
-            this.parent.children = this.parent.children.filter(child => child.value != this.value);
+        if (childMatch) {
+            this.nodeState.hidden = false;
+            this.nodeState.collapsed = false;
+            this.expandAndShowParentRecursively();
+            return true;
         }
+
+        this.nodeState.collapsed = true;
+        const selfMatch = this.name.toLowerCase().includes(text.toLowerCase());
+        this.nodeState.hidden = !selfMatch;
+        if (selfMatch) { this.expandAndShowParentRecursively(); }
+        return selfMatch;
     }
 }

@@ -109,7 +109,7 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
 
   onLoadChildren(node: Node) {
     this.loadChildren.emit(node);
-    this.config.treeLevelConfig.loadChildren();
+    this.config.treeLevelConfig.pushLoad();
   }
 
   onAllRadioChange(event: MatRadioChange) {

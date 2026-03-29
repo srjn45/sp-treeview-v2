@@ -76,7 +76,7 @@ export class SpTreeviewNodeComponent implements OnInit {
   }
 
   search(text: string): boolean {
-    return this.node.filter(text, this.loadChildren);
+    return this.node.filter(text, (node) => this.loadChildren.emit(node));
   }
 
 }

@@ -4,115 +4,53 @@ export const SELECT_NONE = 0;
 export const SELECT_CHECKBOX = 1;
 export const SELECT_RADIO = 2;
 
+export type SelectMode = typeof SELECT_NONE | typeof SELECT_CHECKBOX | typeof SELECT_RADIO;
+
 /**
- * this class sets the config for complete tree
+ * Tree-wide behaviour configuration.
+ * Internal runtime properties (treeview, progress, searchStr, loadChildrenStack)
+ * are managed by SpTreeviewComponent and should not be set by consumers.
  */
 export class TreeLevelConfig {
 
-    private _treeview: SpTreeviewComponent;
+    /** @internal set by SpTreeviewComponent on init */
+    treeview: SpTreeviewComponent;
 
-    private loadChildrenStack = [];
+    /** @internal tracks in-flight lazy-load requests */
+    private loadChildrenStack: number[] = [];
 
-    private _progress = false;
-    private _searchStr = '';
+    /** @internal current progress-bar state */
+    progress: boolean = false;
+
+    /** @internal current search term */
+    searchStr: string = '';
 
     constructor(
-        // make service call for children once or always
-        private _loadOnce = true,
-        private _allNode = true,
-        private _select = SELECT_NONE,
-        private _deleteNode = false,
-        private _addChild = false,
-        private _search = true
+        public loadOnce: boolean = true,
+        public allNode: boolean = true,
+        public select: SelectMode = SELECT_NONE,
+        public deleteNode: boolean = false,
+        public addChild: boolean = false,
+        public search: boolean = true
     ) { }
 
-    public get treeview(): SpTreeviewComponent {
-        return this._treeview;
-    }
-
-    public set treeview(treeview: SpTreeviewComponent) {
-        this._treeview = treeview;
-    }
-
-    public get loadOnce(): boolean {
-        return this._loadOnce;
-    }
-
-    public set loadOnce(loadOnce: boolean) {
-        this._loadOnce = loadOnce;
-    }
-
-    public get allNode(): boolean {
-        return this._allNode;
-    }
-
-    public set allNode(allNode: boolean) {
-        this._allNode = allNode;
-    }
-
-    public get select(): number {
-        return this._select;
-    }
-
-    public set select(select: number) {
-        this._select = select;
-    }
-
-    public get search(): boolean {
-        return this._search;
-    }
-
-    public set search(search: boolean) {
-        this._search = search;
-    }
-
-    public get searchStr(): string {
-        return this._searchStr;
-    }
-
-    public set searchStr(searchStr: string) {
-        this._searchStr = searchStr;
-    }
-
-    public get progress(): boolean {
-        return this._progress;
-    }
-
-    public set progress(progress: boolean) {
-        this._progress = progress;
-    }
-
-    public get deleteNode(): boolean {
-        return this._deleteNode;
-    }
-
-    public set deleteNode(deleteNode: boolean) {
-        this._deleteNode = deleteNode;
-    }
-
-    public get addChild(): boolean {
-        return this._addChild;
-    }
-
-    public set addChild(addChild: boolean) {
-        this._addChild = addChild;
-    }
-
-    public loadChildren() {
+    /** @internal called when a lazy-load request is dispatched */
+    pushLoad(): void {
         this.loadChildrenStack.push(1);
     }
-    public childrenLoaded() {
+
+    /** @internal called when a lazy-load request completes */
+    popLoad(): void {
         this.loadChildrenStack.pop();
         if (this.loadChildrenStack.length === 0) {
             this.progress = false;
         }
     }
 
-    public checkloadChildrenStackSize() {
+    /** @internal ensures progress is cleared when nothing is loading */
+    syncProgress(): void {
         if (this.loadChildrenStack.length === 0) {
             this.progress = false;
         }
     }
-
 }
-

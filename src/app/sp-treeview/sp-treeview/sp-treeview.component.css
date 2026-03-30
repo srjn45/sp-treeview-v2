@@ -24,6 +24,13 @@ mat-form-field {
     justify-content: flex-start;
 }
 
+/* Spacer shown for leaf nodes (no children) to align with branch nodes */
+.leaf-spacer {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
 .btn-small {
     width: 24px !important;
     height: 24px !important;
@@ -35,14 +42,6 @@ mat-form-field {
     line-height: 22px !important;
 }
 
-::ng-deep .mat-input-wrapper.mat-form-field-wrapper {
-    padding-bottom: 0px;
-}
-
-::ng-deep .mat-form-field-underline {
-    bottom: 0px !important;
-}
-
 .treeview-content {
     overflow: auto;
 }
@@ -51,4 +50,13 @@ mat-form-field {
     padding: 10px;
     display: flex;
     justify-content: space-between;
+}
+
+.slideUp {
+    height: 0 !important;
+    overflow: hidden;
+}
+
+* {
+    transition: height 0.3s;
 }

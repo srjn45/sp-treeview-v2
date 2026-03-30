@@ -1,92 +1,141 @@
 <div class="treeview-base">
   <div class="treeview-header">
-    <mat-form-field *ngIf="config.treeLevelConfig.search">
-      <input #search matInput placeholder="Search" (keyup)="onSearch($event)" (change)="$event.stopPropagation()">
-      <button type="button" mat-button mat-icon-button matPrefix color="primary">
-        <mat-icon>search</mat-icon>
-      </button>
-      <!-- <button type="button" mat-button mat-icon-button matSuffix color="warn" (click)="$event.stopPropagation();search.value=null;applySearch('')">
-        <mat-icon>close</mat-icon>
-      </button> -->
-    </mat-form-field>
-    <mat-progress-bar *ngIf="config.treeLevelConfig.progress" mode="indeterminate"></mat-progress-bar>
+    @if (config.treeLevelConfig.search) {
+      <mat-form-field appearance="outline">
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput placeholder="Search" (keyup)="onSearch($event)" (change)="$event.stopPropagation()">
+      </mat-form-field>
+    }
+    @if (config.treeLevelConfig.progress) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
   </div>
+
   <div class="treeview-content" [style.height]="config.dropdownLevelConfig.height">
     <mat-radio-group>
-      <div class="treeview-all" *ngIf="config.treeLevelConfig.allNode">
-        <span>
-          <!-- radio button -->
-          <mat-radio-button *ngIf="config.treeLevelConfig.select===SELECT_RADIO" [value]="all" [checked]="all.nodeState.checked===CHECKED"
-            (change)="onAllRadioChange($event)">
-            &nbsp;{{all.name}}&nbsp;&nbsp;
-          </mat-radio-button>
-          <!-- checkbox -->
-          <mat-checkbox *ngIf="config.treeLevelConfig.select===SELECT_CHECKBOX" [value]="all.value" [checked]="all.nodeState.checked===CHECKED"
-            (change)="onAllCheckChange($event)">
-            &nbsp;{{all.name}}&nbsp;&nbsp;
-          </mat-checkbox>
-          <!-- node name -->
-          <label *ngIf="config.treeLevelConfig.select===SELECT_NONE">
-            &nbsp;{{all.name}}&nbsp;&nbsp;
-          </label>
-        <!-- </span>
-        <span> -->
-          <button mat-icon-button class="btn-small" *ngIf="config.treeLevelConfig.addChild" (click)="onAddRoot()">
-            <mat-icon class="icon-small" color="primary">add</mat-icon>
-          </button>
-        </span>
-        <mat-divider></mat-divider>
-      </div>
-      <sp-treeview-node #tree *ngFor="let node of nodes; trackBy: trackByValue" [template]="template?template:nodeTemplate" [contextPrototype]="contextPrototype"
-        [node]="node" [config]="config" (radioSelect)="onChange($event)" (checkboxSelect)="onChange($event)" (delete)="onDelete($event)"
-        (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)"></sp-treeview-node>
+      @if (config.treeLevelConfig.allNode) {
+        <div class="treeview-all">
+          <span>
+            @if (config.treeLevelConfig.select === SELECT_RADIO) {
+              <mat-radio-button
+                [value]="all"
+                [checked]="all.nodeState.checked === CHECKED"
+                (change)="onAllRadioChange()">
+                &nbsp;{{ all.name }}&nbsp;&nbsp;
+              </mat-radio-button>
+            }
+            @if (config.treeLevelConfig.select === SELECT_CHECKBOX) {
+              <mat-checkbox
+                [value]="all.value"
+                [checked]="all.nodeState.checked === CHECKED"
+                (change)="onAllCheckChange($event)">
+                &nbsp;{{ all.name }}&nbsp;&nbsp;
+              </mat-checkbox>
+            }
+            @if (config.treeLevelConfig.select === SELECT_NONE) {
+              <label>&nbsp;{{ all.name }}&nbsp;&nbsp;</label>
+            }
+            @if (config.treeLevelConfig.addChild) {
+              <button mat-icon-button class="btn-small" (click)="onAddRoot()">
+                <mat-icon class="icon-small" color="primary">add</mat-icon>
+              </button>
+            }
+          </span>
+          <mat-divider></mat-divider>
+        </div>
+      }
+
+      @for (node of nodes; track node.value) {
+        <sp-treeview-node
+          #tree
+          [template]="template ? template : nodeTemplate"
+          [contextPrototype]="contextPrototype"
+          [node]="node"
+          [config]="config"
+          (radioSelect)="onChange($event)"
+          (checkboxSelect)="onChange($event)"
+          (delete)="onDelete($event)"
+          (addChild)="onAddChild($event)"
+          (loadChildren)="onLoadChildren($event)">
+        </sp-treeview-node>
+      }
     </mat-radio-group>
   </div>
 </div>
 
-<ng-template #nodeTemplate let-node="node" let-config="config" let-onCollapseExpand="onCollapseExpand" let-onCheckChange="onCheckChange"
-  let-onRadioChange="onRadioChange" let-onDelete="onDelete" let-onAddChild="onAddChild" let-onLoadChildren="onLoadChildren">
+<ng-template #nodeTemplate
+  let-node="node"
+  let-config="config"
+  let-onCollapseExpand="onCollapseExpand"
+  let-onCheckChange="onCheckChange"
+  let-onRadioChange="onRadioChange"
+  let-onDelete="onDelete"
+  let-onAddChild="onAddChild"
+  let-onLoadChildren="onLoadChildren">
+
   <div class="tree-node">
     <!-- expand/collapse button -->
-    <button type="button" mat-button mat-icon-button *ngIf="node.children" (click)="onCollapseExpand(node)" color="primary">
-      <mat-icon *ngIf="node.nodeState.collapsed">keyboard_arrow_right</mat-icon>
-      <mat-icon *ngIf="!node.nodeState.collapsed">keyboard_arrow_down</mat-icon>
-    </button>
-    <!-- if no children then empty space in place of button -->
-    <div style="width: 40px;height: 40px;flex-shrink: 0;" *ngIf="node.children==null"></div>
-    <!-- <button style="cursor: default;" type="button" mat-button mat-icon-button *ngIf="node.children==null"></button> -->
+    @if (node.children !== null) {
+      <button type="button" mat-icon-button (click)="onCollapseExpand(node)" color="primary">
+        @if (node.nodeState.collapsed) {
+          <mat-icon>keyboard_arrow_right</mat-icon>
+        } @else {
+          <mat-icon>keyboard_arrow_down</mat-icon>
+        }
+      </button>
+    } @else {
+      <div class="leaf-spacer"></div>
+    }
 
     <!-- radio button -->
-    <mat-radio-button *ngIf="config.treeLevelConfig.select===SELECT_RADIO" [checked]="node.nodeState.checked===CHECKED" [value]="node"
-      [disabled]="node.nodeState.disabled" (change)="onRadioChange($event)">
-      &nbsp;{{node.name}}&nbsp;&nbsp;
-    </mat-radio-button>
-    <!-- checkbox -->
-    <mat-checkbox *ngIf="config.treeLevelConfig.select===SELECT_CHECKBOX" [checked]="node.nodeState.checked===CHECKED" [value]="node.value"
-      [indeterminate]="node.nodeState.checked===INDETERMINATE" [disabled]="node.nodeState.disabled" (change)="onCheckChange($event)">
-      &nbsp;{{node.name}}&nbsp;&nbsp;
-    </mat-checkbox>
+    @if (config.treeLevelConfig.select === SELECT_RADIO) {
+      <mat-radio-button
+        [checked]="node.nodeState.checked === CHECKED"
+        [value]="node"
+        [disabled]="node.nodeState.disabled"
+        (change)="onRadioChange($event)">
+        &nbsp;{{ node.name }}&nbsp;&nbsp;
+      </mat-radio-button>
+    }
 
-    <!-- node name -->
-    <label *ngIf="config.treeLevelConfig.select===SELECT_NONE">
-      &nbsp;{{node.name}}&nbsp;&nbsp;
-    </label>
+    <!-- checkbox -->
+    @if (config.treeLevelConfig.select === SELECT_CHECKBOX) {
+      <mat-checkbox
+        [checked]="node.nodeState.checked === CHECKED"
+        [value]="node.value"
+        [indeterminate]="node.nodeState.checked === INDETERMINATE"
+        [disabled]="node.nodeState.disabled"
+        (change)="onCheckChange($event)">
+        &nbsp;{{ node.name }}&nbsp;&nbsp;
+      </mat-checkbox>
+    }
+
+    <!-- label (no selection) -->
+    @if (config.treeLevelConfig.select === SELECT_NONE) {
+      <label>&nbsp;{{ node.name }}&nbsp;&nbsp;</label>
+    }
 
     <!-- add child -->
-    <button mat-icon-button class="btn-small" *ngIf="((node.nodeLevelConfig.addChild!=null || node.nodeLevelConfig.addChild!=undefined) && node.nodeLevelConfig.addChild)
-     || ((node.nodeLevelConfig.addChild==null || node.nodeLevelConfig.addChild==undefined) && config.treeLevelConfig.addChild)"
-      (click)="onAddChild(node)">
-      <mat-icon class="icon-small" color="primary">add</mat-icon>
-    </button>
+    @if ((node.nodeLevelConfig.addChild !== null && node.nodeLevelConfig.addChild !== undefined)
+          ? node.nodeLevelConfig.addChild
+          : config.treeLevelConfig.addChild) {
+      <button mat-icon-button class="btn-small" (click)="onAddChild(node)">
+        <mat-icon class="icon-small" color="primary">add</mat-icon>
+      </button>
+    }
 
     <!-- delete node -->
-    <button mat-icon-button class="btn-small" *ngIf="((node.nodeLevelConfig.deleteNode!=null || node.nodeLevelConfig.deleteNode!=undefined) && node.nodeLevelConfig.deleteNode)
-    || ((node.nodeLevelConfig.deleteNode==null || node.nodeLevelConfig.deleteNode==undefined) && config.treeLevelConfig.deleteNode)"
-      (click)="onDelete(node)">
-      <mat-icon class="icon-small" color="warn">clear</mat-icon>
-    </button>
+    @if ((node.nodeLevelConfig.deleteNode !== null && node.nodeLevelConfig.deleteNode !== undefined)
+          ? node.nodeLevelConfig.deleteNode
+          : config.treeLevelConfig.deleteNode) {
+      <button mat-icon-button class="btn-small" (click)="onDelete(node)">
+        <mat-icon class="icon-small" color="warn">clear</mat-icon>
+      </button>
+    }
 
-    <!-- progress bar -->
-    <mat-progress-bar *ngIf="node.progress" mode="indeterminate"></mat-progress-bar>
+    <!-- per-node progress bar (lazy loading) -->
+    @if (node.progress) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
   </div>
 </ng-template>

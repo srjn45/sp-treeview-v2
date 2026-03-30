@@ -1,7 +1,16 @@
 import { Component, OnInit, Input, EventEmitter, Output, ViewChildren, QueryList, TemplateRef, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDividerModule } from '@angular/material/divider';
+import { SpTreeviewNodeComponent } from '../sp-treeview-node/sp-treeview-node.component';
 import { Config } from '../model/config';
 import { CHECKED, UNCHECKED } from '../model/node-state';
-import { SpTreeviewNodeComponent } from '../sp-treeview-node/sp-treeview-node.component';
 import { SpTreeviewNodeTemplate } from '../model/sp-treeview-node-template';
 import { SpTreeviewNodeTemplateContext } from '../model/sp-treeview-node-template-context';
 import { Node } from '../model/node';
@@ -12,6 +21,19 @@ import { SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE } from '../model/tree-level-
   templateUrl: './sp-treeview.component.html',
   styleUrls: ['./sp-treeview.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [
+    NgTemplateOutlet,
+    SpTreeviewNodeComponent,
+    MatProgressBarModule,
+    MatCheckboxModule,
+    MatRadioModule,
+    MatButtonModule,
+    MatIconModule,
+    MatInputModule,
+    MatFormFieldModule,
+    MatDividerModule,
+  ],
 })
 export class SpTreeviewComponent implements OnInit, OnDestroy {
 

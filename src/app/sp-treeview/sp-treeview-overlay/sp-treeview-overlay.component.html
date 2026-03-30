@@ -7,15 +7,18 @@
 
     <div class="chip-scroll" #chipScroll>
       <mat-chip-set aria-label="Selected items">
-        <mat-chip *ngFor="let node of selectedNodes; trackBy: trackByValue"
-                  (click)="$event.stopPropagation()">
-          {{ node.name }}
-          <button matChipRemove aria-label="Remove {{ node.name }}" (click)="remove(node, $event)">
-            <mat-icon>cancel</mat-icon>
-          </button>
-        </mat-chip>
+        @for (node of selectedNodes; track node.value) {
+          <mat-chip (click)="$event.stopPropagation()">
+            {{ node.name }}
+            <button matChipRemove aria-label="Remove {{ node.name }}" (click)="remove(node, $event)">
+              <mat-icon>cancel</mat-icon>
+            </button>
+          </mat-chip>
+        }
       </mat-chip-set>
-      <span class="chip-placeholder" *ngIf="selectedNodes.length === 0">{{ placeholder }}</span>
+      @if (selectedNodes.length === 0) {
+        <span class="chip-placeholder">{{ placeholder }}</span>
+      }
     </div>
 
     <button type="button" matSuffix mat-icon-button (click)="scrollRight($event)" color="primary" aria-label="Scroll chips right">
@@ -48,4 +51,6 @@
   </div>
 </div>
 
-<div class="cvr-screen" *ngIf="dropDown" (click)="$event.stopPropagation(); dropDown=false;"></div>
+@if (dropDown) {
+  <div class="cvr-screen" (click)="$event.stopPropagation(); dropDown=false;"></div>
+}

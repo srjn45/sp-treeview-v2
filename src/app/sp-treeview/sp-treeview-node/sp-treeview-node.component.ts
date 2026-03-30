@@ -1,4 +1,5 @@
 import { Component, OnInit, Input, Output, TemplateRef, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { Config } from '../model/config';
 import { SpTreeviewNodeTemplate } from '../model/sp-treeview-node-template';
 import { CHECKED, INDETERMINATE, UNCHECKED } from '../model/node-state';
@@ -11,6 +12,12 @@ import { SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE } from '../model/tree-level-
   templateUrl: './sp-treeview-node.component.html',
   styleUrls: ['./sp-treeview-node.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [
+    NgTemplateOutlet,
+    // Self-import for recursive usage
+    SpTreeviewNodeComponent,
+  ],
 })
 export class SpTreeviewNodeComponent implements OnInit {
 

@@ -1,4 +1,9 @@
 import { Component, OnInit, Input, TemplateRef, EventEmitter, Output, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatChipsModule } from '@angular/material/chips';
+import { SpTreeviewComponent } from '../sp-treeview/sp-treeview.component';
 import { Config } from '../model/config';
 import { SpTreeviewNodeTemplate } from '../model/sp-treeview-node-template';
 import { SpTreeviewComponent } from '../sp-treeview/sp-treeview.component';
@@ -11,6 +16,14 @@ import { UNCHECKED } from '../model/node-state';
   templateUrl: './sp-treeview-overlay.component.html',
   styleUrls: ['./sp-treeview-overlay.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [
+    SpTreeviewComponent,
+    MatFormFieldModule,
+    MatButtonModule,
+    MatIconModule,
+    MatChipsModule,
+  ],
 })
 export class SpTreeviewOverlayComponent implements OnInit {
 

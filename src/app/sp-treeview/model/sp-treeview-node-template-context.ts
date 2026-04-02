@@ -6,14 +6,14 @@ import { CHECKED, UNCHECKED } from './node-state';
 
 export class SpTreeviewNodeTemplateContext implements SpTreeviewNodeTemplate {
 
-    node: Node;
+    node!: Node;
     config: Config = new Config();
 
-    radioSelect: EventEmitter<Node[]>;
-    checkboxSelect: EventEmitter<null>;
-    delete: EventEmitter<Node>;
-    addChild: EventEmitter<Node>;
-    loadChildren: EventEmitter<Node>;
+    radioSelect!: EventEmitter<Node[]>;
+    checkboxSelect!: EventEmitter<null>;
+    delete!: EventEmitter<Node>;
+    addChild!: EventEmitter<Node>;
+    loadChildren!: EventEmitter<Node>;
 
     public onCollapseExpand = (node: Node) => {
         node.unHideChildren();

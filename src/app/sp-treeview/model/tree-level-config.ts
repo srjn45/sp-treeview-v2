@@ -19,6 +19,13 @@ export class TreeLevelConfig {
      */
     onRemoveRoot: ((value: any) => void) | null = null;
 
+    /**
+     * @internal
+     * Callback fired by popLoad() when the load stack empties.
+     * Wired by SpTreeviewComponent to call cdr.detectChanges().
+     */
+    onPopLoad: (() => void) | null = null;
+
     /** @internal current progress-bar state */
     progress: boolean = false;
 
@@ -47,6 +54,7 @@ export class TreeLevelConfig {
         this.loadChildrenStack.pop();
         if (this.loadChildrenStack.length === 0) {
             this.progress = false;
+            this.onPopLoad?.();
         }
     }
 

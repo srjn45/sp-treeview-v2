@@ -1,5 +1,4 @@
-import { Component, OnInit, Input, EventEmitter, Output, ViewChildren, QueryList, TemplateRef, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
+import { Component, OnInit, Input, EventEmitter, Output, ViewChildren, QueryList, TemplateRef, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatRadioModule } from '@angular/material/radio';
@@ -23,7 +22,6 @@ import { SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE } from '../model/tree-level-
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    NgTemplateOutlet,
     SpTreeviewNodeComponent,
     MatProgressBarModule,
     MatCheckboxModule,
@@ -46,10 +44,10 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
 
   all = new Node('All', 'ALL');
 
-  @Input() nodes: Node[];
+  @Input() nodes: Node[] = [];
   @Input() config: Config = new Config();
 
-  @Input() template: TemplateRef<SpTreeviewNodeTemplate>;
+  @Input() template!: TemplateRef<SpTreeviewNodeTemplate>;
   @Input() contextPrototype = SpTreeviewNodeTemplateContext.prototype;
 
   @Output() change: EventEmitter<Node[]> = new EventEmitter<Node[]>();
@@ -57,23 +55,27 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
   @Output() addChild: EventEmitter<Node> = new EventEmitter<Node>();
   @Output() loadChildren: EventEmitter<Node> = new EventEmitter<Node>();
 
-  @ViewChildren('tree') trees: QueryList<SpTreeviewNodeComponent>;
+  @ViewChildren('tree') trees!: QueryList<SpTreeviewNodeComponent>;
 
   private searchDebounceTimer: any = null;
 
-  constructor() { }
+  constructor(private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
     // Wire the root-removal callback so Node.removeMe() can remove root nodes
     // without holding a direct reference to this component.
     this.config.treeLevelConfig.onRemoveRoot = (value: any) => {
       this.nodes = this.nodes.filter(n => n.value !== value);
+      this.cdr.detectChanges();
     };
+    // Wire the load-complete callback so async child loads trigger re-render.
+    this.config.treeLevelConfig.onPopLoad = () => this.cdr.detectChanges();
     this.nodes.forEach(n => { Node.nodify(n); n.setConfigRecursively(this.config); });
   }
 
   ngOnDestroy() {
     this.config.treeLevelConfig.onRemoveRoot = null;
+    this.config.treeLevelConfig.onPopLoad = null;
     if (this.searchDebounceTimer) {
       clearTimeout(this.searchDebounceTimer);
     }
@@ -97,6 +99,7 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
   applySearch() {
     this.config.treeLevelConfig.progress = true;
     this.trees.forEach(t => t.search(this.config.treeLevelConfig.searchStr));
+    this.cdr.detectChanges();
   }
 
   onChange(nodes: Node[]) {
@@ -115,14 +118,17 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
       this.all.nodeState.checked = UNCHECKED;
       this.change.emit(nodes);
     }
+    this.cdr.detectChanges();
   }
 
   onDelete(node: Node) {
     this.delete.emit(node);
+    this.cdr.detectChanges();
   }
 
   onAddChild(node: Node) {
     this.addChild.emit(node);
+    this.cdr.detectChanges();
   }
 
   onLoadChildren(node: Node) {

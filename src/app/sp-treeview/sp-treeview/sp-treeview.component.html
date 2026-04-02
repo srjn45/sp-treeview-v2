@@ -1,8 +1,8 @@
 <div class="treeview-base">
   <div class="treeview-header">
     @if (config.treeLevelConfig.search) {
-      <mat-form-field appearance="outline">
-        <mat-icon matPrefix>search</mat-icon>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-icon matIconPrefix>search</mat-icon>
         <input matInput placeholder="Search" (keyup)="onSearch($event)" (change)="$event.stopPropagation()">
       </mat-form-field>
     }

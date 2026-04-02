@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, TemplateRef, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, Input, Output, TemplateRef, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { Config } from '../model/config';
 import { SpTreeviewNodeTemplate } from '../model/sp-treeview-node-template';
@@ -43,9 +43,12 @@ export class SpTreeviewNodeComponent implements OnInit {
 
   public context!: SpTreeviewNodeTemplateContext;
 
+  constructor(private cdr: ChangeDetectorRef) {}
+
   ngOnInit() {
     // Create context with the supplied prototype so custom context classes work.
-    // Object.create is the correct way to use prototype-based delegation.
+    // Object.create only inherits prototype methods, not class-field arrow functions,
+    // so all six handler functions must be explicitly assigned below.
     this.context = Object.create(
       this.contextPrototype ?? SpTreeviewNodeTemplateContext.prototype
     ) as SpTreeviewNodeTemplateContext;
@@ -57,6 +60,41 @@ export class SpTreeviewNodeComponent implements OnInit {
     this.context.loadChildren = this.loadChildren;
     this.context.checkboxSelect = this.checkboxSelect as any;
     this.context.radioSelect = this.radioSelect;
+
+    // Assign all six handler arrow fns so templates bound via ngTemplateOutlet
+    // receive callable functions regardless of the context prototype used.
+    this.context.onCollapseExpand = this.contextOnCollapseExpand;
+    this.context.onCheckChange = this.contextOnCheckChange;
+    this.context.onRadioChange = this.contextOnRadioChange;
+    this.context.onDelete = this.onDelete;
+    this.context.onAddChild = this.onAddChild;
+    this.context.onLoadChildren = this.onLoadChildren;
+  }
+
+  // ── context handler arrow fns ───────────────────────────────────────────────
+
+  contextOnCollapseExpand = (node: Node) => {
+    node.unHideChildren();
+    if (node.nodeState.collapsed) {
+      const loadOnce = this.config.treeLevelConfig.loadOnce;
+      if ((loadOnce && (node.children?.length ?? 0) === 0) || !loadOnce) {
+        node.progress = true;
+        this.loadChildren.emit(node);
+        return;
+      }
+    }
+    node.nodeState.collapsed = !node.nodeState.collapsed;
+    this.cdr.markForCheck();
+  }
+
+  contextOnCheckChange = (event: { checked: boolean }) => {
+    this.node.nodeState.checked = event.checked ? CHECKED : UNCHECKED;
+    this.node.changeChildrenRecursive();
+    this.checkboxSelect.emit();
+  }
+
+  contextOnRadioChange = (event: { value: Node }) => {
+    this.radioSelect.emit([event.value]);
   }
 
   onDelete = (node: Node) => this.delete.emit(node);

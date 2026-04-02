@@ -2,6 +2,21 @@
     position: relative;
 }
 
+.field-outline {
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(0, 0, 0, 0.38);
+    border-radius: 4px;
+    padding: 4px 4px;
+    cursor: pointer;
+    box-sizing: border-box;
+    min-height: 48px;
+}
+
+.field-outline:hover {
+    border-color: rgba(0, 0, 0, 0.87);
+}
+
 .full-width {
     width: 100%;
 }

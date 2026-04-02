@@ -15,7 +15,7 @@ export interface NodeLike {
 export class Node {
 
     /** @internal set by SpTreeviewComponent on init */
-    private _config: Config;
+    private _config!: Config;
 
     /** @internal stored so filter() can trigger lazy loads after children arrive */
     private _loadChildrenCb: ((node: Node) => void) | null = null;
@@ -158,7 +158,7 @@ export class Node {
         if (this.parent === null) {
             this._config?.treeLevelConfig?.onRemoveRoot?.(this.value);
         } else {
-            this.parent.children = this.parent.children.filter(c => c.value !== this.value);
+            this.parent.children = this.parent.children!.filter(c => c.value !== this.value);
         }
     }
 

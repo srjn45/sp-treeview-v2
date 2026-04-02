@@ -1,7 +1,7 @@
 <div class="base">
-  <mat-form-field class="full-width shrink" appearance="outline" [class.liftup]="dropDown" (click)="dropDown=!dropDown">
+  <div class="field-outline full-width shrink" [class.liftup]="dropDown" (click)="dropDown=!dropDown">
 
-    <button type="button" matPrefix mat-icon-button (click)="scrollLeft($event)" color="primary" aria-label="Scroll chips left">
+    <button type="button" class="scroll-btn" mat-icon-button (click)="scrollLeft($event)" color="primary" aria-label="Scroll chips left">
       <mat-icon>keyboard_arrow_left</mat-icon>
     </button>
 
@@ -21,14 +21,14 @@
       }
     </div>
 
-    <button type="button" matSuffix mat-icon-button (click)="scrollRight($event)" color="primary" aria-label="Scroll chips right">
+    <button type="button" class="scroll-btn" mat-icon-button (click)="scrollRight($event)" color="primary" aria-label="Scroll chips right">
       <mat-icon>keyboard_arrow_right</mat-icon>
     </button>
-    <button type="button" matSuffix mat-icon-button color="primary" aria-label="Toggle overlay">
+    <button type="button" mat-icon-button color="primary" aria-label="Toggle overlay">
       <mat-icon>{{ dropDown ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
     </button>
 
-  </mat-form-field>
+  </div>
 
   <div class="overlay" [class.slideUp]="!dropDown">
     <div class="overlay-tree">

@@ -11,7 +11,7 @@ import { SELECT_CHECKBOX, SELECT_RADIO, SELECT_NONE } from '../model/tree-level-
   selector: 'sp-treeview-node',
   templateUrl: './sp-treeview-node.component.html',
   styleUrls: ['./sp-treeview-node.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  changeDetection: ChangeDetectionStrategy.Default,
   standalone: true,
   imports: [
     NgTemplateOutlet,

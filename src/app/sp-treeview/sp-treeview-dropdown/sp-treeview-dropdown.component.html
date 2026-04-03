@@ -1,10 +1,6 @@
 <div class="base">
   <div class="field-outline full-width shrink" [class.liftup]="dropDown" (click)="dropDown=!dropDown">
 
-    <button type="button" class="scroll-btn" mat-icon-button (click)="scrollLeft($event)" color="primary" aria-label="Scroll chips left">
-      <mat-icon>keyboard_arrow_left</mat-icon>
-    </button>
-
     <div class="chip-scroll" #chipScroll>
       <mat-chip-set aria-label="Selected items">
         @for (node of selectedNodes; track node.value) {
@@ -21,9 +17,6 @@
       }
     </div>
 
-    <button type="button" class="scroll-btn" mat-icon-button (click)="scrollRight($event)" color="primary" aria-label="Scroll chips right">
-      <mat-icon>keyboard_arrow_right</mat-icon>
-    </button>
     <button type="button" mat-icon-button color="primary" aria-label="Toggle dropdown">
       <mat-icon>{{ dropDown ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
     </button>

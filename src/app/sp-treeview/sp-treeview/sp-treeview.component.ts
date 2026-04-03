@@ -9,7 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDividerModule } from '@angular/material/divider';
 import { SpTreeviewNodeComponent } from '../sp-treeview-node/sp-treeview-node.component';
 import { Config } from '../model/config';
-import { CHECKED, UNCHECKED } from '../model/node-state';
+import { CHECKED, INDETERMINATE, UNCHECKED } from '../model/node-state';
 import { SpTreeviewNodeTemplate } from '../model/sp-treeview-node-template';
 import { SpTreeviewNodeTemplateContext } from '../model/sp-treeview-node-template-context';
 import { Node } from '../model/node';
@@ -41,6 +41,7 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
 
   public CHECKED = CHECKED;
   public UNCHECKED = UNCHECKED;
+  public INDETERMINATE = INDETERMINATE;
 
   all = new Node('All', 'ALL');
 
@@ -99,6 +100,7 @@ export class SpTreeviewComponent implements OnInit, OnDestroy {
   applySearch() {
     this.config.treeLevelConfig.progress = true;
     this.trees.forEach(t => t.search(this.config.treeLevelConfig.searchStr));
+    this.config.treeLevelConfig.syncProgress();
     this.cdr.detectChanges();
   }
 

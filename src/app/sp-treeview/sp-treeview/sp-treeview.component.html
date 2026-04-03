@@ -3,7 +3,7 @@
     @if (config.treeLevelConfig.search) {
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-icon matIconPrefix>search</mat-icon>
-        <input matInput placeholder="Search" (keyup)="onSearch($event)" (change)="$event.stopPropagation()">
+        <input matInput placeholder="Search" (input)="onSearch($event)" (change)="$event.stopPropagation()">
       </mat-form-field>
     }
     @if (config.treeLevelConfig.progress) {

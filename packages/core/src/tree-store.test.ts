@@ -1953,3 +1953,396 @@ describe('lazy loading — §3.3', () => {
     expect(store.rows()[0]?.expandable).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// §3.3 — filtering
+// ---------------------------------------------------------------------------
+
+describe('filtering — setFilter / clearFilter', () => {
+  // ---- default case-insensitive substring matcher ----
+
+  it('setFilter: default matcher is case-insensitive substring on label', () => {
+    const store = new TreeStore({
+      data: [leaf('a', 'Apple'), leaf('b', 'Banana'), leaf('c', 'apricot')],
+    });
+    store.setFilter('ap');
+    const ids = store.rows().map(r => r.node.id);
+    expect(ids).toContain('a');   // Apple contains 'ap' (case-insensitive)
+    expect(ids).toContain('c');   // apricot contains 'ap'
+    expect(ids).not.toContain('b');
+  });
+
+  it('setFilter: uppercase query matches lowercase label', () => {
+    const store = new TreeStore({ data: [leaf('x', 'hello')] });
+    store.setFilter('HELLO');
+    expect(store.rows()).toHaveLength(1);
+    expect(store.rows()[0]?.node.id).toBe('x');
+  });
+
+  it('setFilter: no matching nodes → rows() is empty', () => {
+    const store = new TreeStore({
+      data: [leaf('a', 'Apple'), leaf('b', 'Banana')],
+    });
+    store.setFilter('zzz');
+    expect(store.rows()).toHaveLength(0);
+  });
+
+  // ---- custom matcher ----
+
+  it('custom matcher option is used instead of default', () => {
+    const matcher = vi.fn((query: string, node: TreeNodeData) =>
+      node.label.startsWith(query)
+    );
+    const store = new TreeStore({
+      data: [leaf('a', 'Apple'), leaf('b', 'Apricot'), leaf('c', 'Banana')],
+      matcher,
+    });
+    store.setFilter('Ap');
+    expect(matcher).toHaveBeenCalled();
+    const ids = store.rows().map(r => r.node.id);
+    expect(ids).toContain('a');
+    expect(ids).toContain('b');
+    expect(ids).not.toContain('c');
+  });
+
+  it('custom matcher receives (query, node) in that order', () => {
+    let capturedQuery = '';
+    let capturedNode: TreeNodeData | null = null;
+    const store = new TreeStore({
+      data: [leaf('x', 'X')],
+      matcher: (query, node) => {
+        capturedQuery = query;
+        capturedNode = node;
+        return false;
+      },
+    });
+    store.setFilter('test');
+    expect(capturedQuery).toBe('test');
+    expect(capturedNode?.id).toBe('x');
+  });
+
+  // ---- matched flag ----
+
+  it('matched flag is true only for directly matching nodes', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1', 'match me'), leaf('c2', 'no')])],
+    });
+    store.setFilter('match');
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'p')?.matched).toBe(false);   // ancestor
+    expect(rows.find(r => r.node.id === 'c1')?.matched).toBe(true);   // direct match
+    expect(rows.find(r => r.node.id === 'c2')).toBeUndefined();        // excluded
+  });
+
+  it('matched is false on all rows when no filter is active', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      initialExpanded: ['p'],
+    });
+    for (const row of store.rows()) {
+      expect(row.matched).toBe(false);
+    }
+  });
+
+  // ---- ancestor reveal + expand ----
+
+  it('matching leaf reveals and expands all its ancestors', () => {
+    // root → a → b → c (matches)
+    const store = new TreeStore({
+      data: [branch('root', [branch('a', [branch('b', [leaf('c', 'target')])])])],
+    });
+    store.setFilter('target');
+    const rows = store.rows();
+    const ids = rows.map(r => r.node.id);
+    expect(ids).toContain('root');
+    expect(ids).toContain('a');
+    expect(ids).toContain('b');
+    expect(ids).toContain('c');
+    // Ancestors should be expanded
+    expect(rows.find(r => r.node.id === 'root')?.expanded).toBe(true);
+    expect(rows.find(r => r.node.id === 'a')?.expanded).toBe(true);
+    expect(rows.find(r => r.node.id === 'b')?.expanded).toBe(true);
+  });
+
+  it('non-matching subtrees are absent from rows()', () => {
+    // root has two children: a (matches) and b (doesn't match and has no matching descendants)
+    const store = new TreeStore({
+      data: [
+        branch('root', [
+          leaf('a', 'alpha'),
+          branch('b', [leaf('b1', 'nope'), leaf('b2', 'nothing')]),
+        ]),
+      ],
+    });
+    store.setFilter('alpha');
+    const ids = store.rows().map(r => r.node.id);
+    expect(ids).toContain('root');
+    expect(ids).toContain('a');
+    expect(ids).not.toContain('b');
+    expect(ids).not.toContain('b1');
+    expect(ids).not.toContain('b2');
+  });
+
+  it('setSize and posInSet reflect visible siblings only under a parent', () => {
+    // parent → c1 (matches), c2 (no), c3 (matches)
+    const store = new TreeStore({
+      data: [branch('p', [
+        leaf('c1', 'find'),
+        leaf('c2', 'skip'),
+        leaf('c3', 'find too'),
+      ])],
+    });
+    store.setFilter('find');
+    const rows = store.rows();
+    const c1Row = rows.find(r => r.node.id === 'c1');
+    const c3Row = rows.find(r => r.node.id === 'c3');
+    expect(c1Row?.setSize).toBe(2);   // only c1 and c3 visible
+    expect(c1Row?.posInSet).toBe(1);
+    expect(c3Row?.setSize).toBe(2);
+    expect(c3Row?.posInSet).toBe(2);
+  });
+
+  // ---- no loadChildren triggered ----
+
+  it('filtering a lazy node does NOT call loadChildren', () => {
+    const loadChildren = vi.fn().mockResolvedValue([]);
+    const store = new TreeStore({
+      data: [lazyBranch('lazy', 'lazy branch')],
+      loadChildren,
+    });
+    store.setFilter('lazy');
+    expect(loadChildren).not.toHaveBeenCalled();
+  });
+
+  it('lazy unloaded node matched by its own label — visible without loading', () => {
+    const loadChildren = vi.fn().mockResolvedValue([]);
+    const store = new TreeStore({
+      data: [lazyBranch('p', 'find me')],
+      loadChildren,
+    });
+    store.setFilter('find');
+    const rows = store.rows();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.node.id).toBe('p');
+    expect(rows[0]?.matched).toBe(true);
+    expect(loadChildren).not.toHaveBeenCalled();
+  });
+
+  // ---- clearFilter restores pre-filter expansion snapshot ----
+
+  it('clearFilter restores the exact pre-filter expansion state', () => {
+    // Only 'a' is pre-expanded; after filter, clearFilter should restore just 'a' expanded
+    const store = new TreeStore({
+      data: [
+        branch('a', [branch('a1', [leaf('a2')])]),
+        branch('b', [leaf('b1', 'target')]),
+      ],
+      initialExpanded: ['a'],
+    });
+    // Snapshot: only 'a' is expanded
+    store.setFilter('target'); // reveals 'b' and expands it
+    const filteredIds = store.rows().map(r => r.node.id);
+    expect(filteredIds).toContain('b');
+    expect(filteredIds).toContain('b1');
+    expect(filteredIds).not.toContain('a1'); // a is in rows but a1 is not (a1 not matching/ancestor)
+
+    store.clearFilter();
+    const restoredRows = store.rows();
+    const restoredIds = restoredRows.map(r => r.node.id);
+    // 'a' expanded, 'a1' visible because a was expanded in snapshot
+    expect(restoredIds).toContain('a');
+    expect(restoredIds).toContain('a1');
+    // 'b' restored to collapsed (wasn't expanded before filter)
+    expect(restoredIds).toContain('b');
+    expect(restoredIds).not.toContain('b1');
+  });
+
+  it('clearFilter with no filter active is a no-op (does not emit)', () => {
+    const store = new TreeStore({ data: [leaf('a')] });
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.clearFilter();
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('clearFilter emits rows event', () => {
+    const store = new TreeStore({ data: [leaf('a', 'alpha')] });
+    store.setFilter('alpha');
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.clearFilter();
+    expect(listener).toHaveBeenCalledWith({ type: 'rows' });
+  });
+
+  it('multiple setFilter calls update with the same original snapshot', () => {
+    const store = new TreeStore({
+      data: [
+        branch('a', [leaf('a1', 'foo')]),
+        branch('b', [leaf('b1', 'bar')]),
+      ],
+    });
+    // Pre-filter: nothing expanded
+    store.setFilter('foo'); // snapshot taken: {} expanded; a becomes ancestor
+    store.setFilter('bar'); // same snapshot; b becomes ancestor (a no longer ancestor)
+    const rows = store.rows();
+    const ids = rows.map(r => r.node.id);
+    expect(ids).toContain('b');
+    expect(ids).toContain('b1');
+    expect(ids).not.toContain('a1'); // a1 doesn't match 'bar'
+
+    store.clearFilter();
+    // Restored to pre-first-filter state: nothing expanded
+    const restored = store.rows();
+    expect(restored).toHaveLength(2); // a and b, both collapsed
+    expect(restored.map(r => r.node.id)).toEqual(['a', 'b']);
+  });
+
+  it('setFilter with same query is idempotent (no emit)', () => {
+    const store = new TreeStore({ data: [leaf('a', 'alpha')] });
+    store.setFilter('al');
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setFilter('al'); // same query — no-op
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('setFilter emits rows event', () => {
+    const store = new TreeStore({ data: [leaf('a', 'alpha')] });
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setFilter('al');
+    expect(listener).toHaveBeenCalledWith({ type: 'rows' });
+  });
+
+  it("setFilter('') clears an active filter and restores expansion", () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c', 'target')])],
+    });
+    store.setFilter('target'); // snapshot: p not expanded; p expanded by filter
+    store.setFilter('');       // should clear filter and restore
+
+    const rows = store.rows();
+    // p restored to collapsed (was not expanded pre-filter)
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.node.id).toBe('p');
+    expect(rows[0]?.expanded).toBe(false);
+    // matched flag cleared
+    expect(rows[0]?.matched).toBe(false);
+  });
+
+  it('parent matched by label: its children are not in rows unless they also match', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1', 'child'), leaf('c2', 'kid')])],
+    });
+    store.setFilter('p'); // matches 'p' (label 'p' contains 'p'), not children
+    const rows = store.rows();
+    const ids = rows.map(r => r.node.id);
+    // p is matched directly; it's expanded in visibleSet but its children don't match
+    // and p is not an ancestor-of-match (it's the match itself)
+    // so p's children should NOT appear (only ancestors get auto-expanded)
+    expect(ids).toContain('p');
+    // Children c1, c2 are not in visibleSet (not matched, not ancestors of matched)
+    expect(ids).not.toContain('c1');
+    expect(ids).not.toContain('c2');
+  });
+
+  it('both parent and child match: child appears in rows once', () => {
+    const store = new TreeStore({
+      data: [branch('parent-node', [leaf('child-node', 'child-node')])],
+    });
+    store.setFilter('node'); // matches both parent-node and child-node
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'parent-node')?.matched).toBe(true);
+    expect(rows.find(r => r.node.id === 'child-node')?.matched).toBe(true);
+    // parent-node is both matched and an ancestor of child-node; appears once
+    expect(rows.filter(r => r.node.id === 'parent-node')).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §3.3 — filter + lazy load interaction
+// ---------------------------------------------------------------------------
+
+describe('filter + lazy-load interaction', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('children loaded while filter active: non-matching excluded, matching revealed', async () => {
+    const store = new TreeStore({
+      data: [lazyBranch('p', 'container')],
+      loadChildren: vi.fn().mockResolvedValue([
+        leaf('c1', 'match me'),
+        leaf('c2', 'skip'),
+      ]),
+    });
+
+    store.setFilter('match'); // p does not match 'match'; no children yet → rows() empty
+    expect(store.rows()).toHaveLength(0);
+
+    // Expand p while filter active (expand goes through lazy load)
+    // But wait: p is not visible! We still test via the expand() API
+    store.expand('p');
+    await flush();
+
+    const rows = store.rows();
+    const ids = rows.map(r => r.node.id);
+    // p is now an ancestor of c1 (which matches) → p revealed
+    expect(ids).toContain('p');
+    expect(ids).toContain('c1');    // matched
+    expect(ids).not.toContain('c2'); // doesn't match
+    expect(rows.find(r => r.node.id === 'c1')?.matched).toBe(true);
+    expect(rows.find(r => r.node.id === 'p')?.matched).toBe(false); // ancestor only
+  });
+
+  it('children loaded while filter active: none match → loaded node stays hidden', async () => {
+    const store = new TreeStore({
+      data: [lazyBranch('p', 'container'), leaf('other', 'match me')],
+      loadChildren: vi.fn().mockResolvedValue([leaf('c1', 'no'), leaf('c2', 'nope')]),
+    });
+
+    store.setFilter('match'); // 'other' matches; p doesn't, c1/c2 not yet loaded
+    expect(store.rows().map(r => r.node.id)).toContain('other');
+
+    store.expand('p');
+    await flush();
+
+    // c1 and c2 don't match; p is not an ancestor of any match → all excluded
+    const ids = store.rows().map(r => r.node.id);
+    expect(ids).not.toContain('p');
+    expect(ids).not.toContain('c1');
+    expect(ids).not.toContain('c2');
+    expect(ids).toContain('other'); // still there
+  });
+
+  it('filter-then-lazy-load does NOT re-trigger loadChildren spy beyond one call', async () => {
+    const loadChildren = vi.fn().mockResolvedValue([leaf('c1', 'target')]);
+    const store = new TreeStore({
+      data: [lazyBranch('p', 'container')],
+      loadChildren,
+    });
+
+    store.setFilter('target');
+    store.expand('p');
+    await flush();
+
+    expect(loadChildren).toHaveBeenCalledOnce(); // only one load, not re-triggered by filter
+  });
+
+  it('setFilter while load in-flight: applied to children on success', async () => {
+    const d = defer<TreeNodeData[]>();
+    const store = new TreeStore({
+      data: [lazyBranch('p', 'parent')],
+      loadChildren: vi.fn(() => d.promise),
+    });
+
+    store.expand('p'); // starts load
+    store.setFilter('match'); // filter set while load is in-flight
+
+    d.resolve([leaf('c1', 'match me'), leaf('c2', 'skip')]);
+    await flush();
+
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'c1')?.matched).toBe(true);
+    expect(rows.find(r => r.node.id === 'c2')).toBeUndefined();
+  });
+});

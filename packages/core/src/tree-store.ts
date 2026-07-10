@@ -42,10 +42,12 @@ export class TreeStore<T = unknown> {
   private _pendingExpand = new Set<string>(); // nodes to auto-expand when their load resolves
   private _storeEpoch: Epoch = 0;            // incremented by setData() to detect stale resolutions
 
-  // ---- stub state: filter (implemented by core-filter task) ----
+  // ---- filter state ----
   private _matcher: TreeStoreOptions<T>['matcher'];
   private _filterQuery = '';
   private _matchedSet = new Set<string>();
+  private _filterAncestorSet = new Set<string>();       // ancestors of matched nodes
+  private _filterExpansionSnapshot: Set<string> | null = null; // _expanded at first setFilter
 
   constructor(options: TreeStoreOptions<T>) {
     this._selection = options.selection ?? 'none';
@@ -85,7 +87,10 @@ export class TreeStore<T = unknown> {
   rows(): Row<T>[] {
     if (this._rowsCache !== null) return this._rowsCache;
     const result: Row<T>[] = [];
-    this._buildRows(this._roots, 1, result);
+    const visibleSet: Set<string> | null = this._filterQuery
+      ? new Set<string>([...this._matchedSet, ...this._filterAncestorSet])
+      : null;
+    this._buildRows(this._roots, 1, result, visibleSet);
     this._rowsCache = result;
     return result;
   }
@@ -199,6 +204,8 @@ export class TreeStore<T = unknown> {
     this._pendingExpand.clear();
     this._matchedSet.clear();
     this._filterQuery = '';
+    this._filterAncestorSet.clear();
+    this._filterExpansionSnapshot = null;
     this._loadData(data);
     this._emit({ type: 'rows' });
   }
@@ -329,11 +336,33 @@ export class TreeStore<T = unknown> {
   }
 
   // ================================================================
-  // commands: filter stubs (core-filter task implements)
+  // commands: filter
   // ================================================================
 
-  setFilter(_query: string): void { /* stub */ }
-  clearFilter(): void { /* stub */ }
+  setFilter(query: string): void {
+    if (query === this._filterQuery) return;
+
+    if (query) {
+      // Take snapshot of expansion state on first filter activation
+      if (this._filterExpansionSnapshot === null) {
+        this._filterExpansionSnapshot = new Set(this._expanded);
+      }
+      this._filterQuery = query;
+      this._reapplyFilter();
+    } else {
+      this._deactivateFilter();
+    }
+
+    this._invalidate();
+    this._emit({ type: 'rows' });
+  }
+
+  clearFilter(): void {
+    if (this._filterQuery === '' && this._filterExpansionSnapshot === null) return;
+    this._deactivateFilter();
+    this._invalidate();
+    this._emit({ type: 'rows' });
+  }
 
   // ================================================================
   // commands: lazy loading
@@ -361,9 +390,18 @@ export class TreeStore<T = unknown> {
   // private helpers
   // ================================================================
 
-  private _buildRows(nodes: InternalNode<T>[], level: number, result: Row<T>[]): void {
-    const setSize = nodes.length;
-    for (const [i, node] of nodes.entries()) {
+  private _buildRows(
+    nodes: InternalNode<T>[],
+    level: number,
+    result: Row<T>[],
+    visibleSet: Set<string> | null,
+  ): void {
+    const visibleNodes = visibleSet
+      ? nodes.filter(n => visibleSet.has(n.data.id))
+      : nodes;
+    const setSize = visibleNodes.length;
+
+    for (const [i, node] of visibleNodes.entries()) {
       const id = node.data.id;
       const expanded = this._expanded.has(id);
       const expandable =
@@ -384,7 +422,7 @@ export class TreeStore<T = unknown> {
       });
 
       if (expanded && node.children.length > 0) {
-        this._buildRows(node.children, level + 1, result);
+        this._buildRows(node.children, level + 1, result, visibleSet);
       }
     }
   }
@@ -453,6 +491,7 @@ export class TreeStore<T = unknown> {
     this._loadedSet.delete(node.data.id);
     this._pendingExpand.delete(node.data.id);
     this._matchedSet.delete(node.data.id);
+    this._filterAncestorSet.delete(node.data.id);
     for (const child of node.children) {
       this._purgeInternal(child);
     }
@@ -610,8 +649,10 @@ export class TreeStore<T = unknown> {
           }
         }
 
-        // Hook point for core-filter task: re-apply active filter to new children here
-        // (when _filterQuery is non-empty, apply _matcher over the new subtree)
+        // Re-apply active filter to newly loaded children
+        if (this._filterQuery) {
+          this._reapplyFilter();
+        }
 
         // Auto-expand only if collapse() did not cancel the intent during loading
         if (this._pendingExpand.has(id)) {
@@ -637,6 +678,62 @@ export class TreeStore<T = unknown> {
         this._emit({ type: 'rows' });
       }
     );
+  }
+
+  // ================================================================
+  // private: filter helpers
+  // ================================================================
+
+  private _deactivateFilter(): void {
+    this._filterQuery = '';
+    this._matchedSet.clear();
+    this._filterAncestorSet.clear();
+    if (this._filterExpansionSnapshot !== null) {
+      this._expanded = new Set(this._filterExpansionSnapshot);
+      this._filterExpansionSnapshot = null;
+    }
+  }
+
+  /**
+   * Recompute _matchedSet and _filterAncestorSet from _filterQuery.
+   * Restores _expanded to snapshot then re-applies ancestor expansions,
+   * so consecutive setFilter() calls always start from the pre-filter state.
+   */
+  private _reapplyFilter(): void {
+    this._matchedSet.clear();
+    this._filterAncestorSet.clear();
+
+    const q = this._filterQuery.toLowerCase();
+    const matchFn = this._matcher
+      ? (node: TreeNodeData<T>) => this._matcher!(this._filterQuery, node)
+      : (node: TreeNodeData<T>) => node.label.toLowerCase().includes(q);
+
+    // Test all loaded nodes against the matcher (never triggers loadChildren)
+    for (const [, internal] of this._nodeMap) {
+      if (matchFn(internal.data)) {
+        this._matchedSet.add(internal.data.id);
+      }
+    }
+
+    // Restore expansion to the pre-filter snapshot before setting filter-driven expansions
+    if (this._filterExpansionSnapshot !== null) {
+      this._expanded = new Set(this._filterExpansionSnapshot);
+    }
+
+    // Expand all ancestors of matched nodes so matches are visible
+    for (const id of this._matchedSet) {
+      const internal = this._nodeMap.get(id);
+      if (!internal) continue;
+      let parentId = internal.parentId;
+      while (parentId !== null) {
+        if (this._filterAncestorSet.has(parentId)) break; // chain already processed
+        this._filterAncestorSet.add(parentId);
+        this._expanded.add(parentId);
+        const parent = this._nodeMap.get(parentId);
+        if (!parent) break;
+        parentId = parent.parentId;
+      }
+    }
   }
 
   private _invalidate(): void {

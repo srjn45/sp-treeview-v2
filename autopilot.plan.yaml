@@ -1,0 +1,141 @@
+version: 1
+goal: >
+  Rebuild sp-treeview as v4 per docs/specs/2026-07-10-headless-core-web-component.md:
+  a zero-dependency headless TypeScript tree-state engine (@sp-treeview/core) plus
+  framework-agnostic Lit web components (@sp-treeview/element) with full ARIA tree
+  semantics, keyboard navigation, and CSS-token theming. The legacy Angular
+  implementation under src/ stays frozen. Read the spec before starting any task.
+
+constraints:
+  - "Read docs/specs/2026-07-10-headless-core-web-component.md first; it is the source of truth for every task."
+  - "Do not modify src/, angular.json, or anything in the legacy Angular app, except the root package.json changes the scaffold task defines."
+  - "packages/core must have zero runtime dependencies; packages/element only lit and @floating-ui/dom."
+  - "TypeScript strict mode everywhere; every task leaves root npm run lint, npm test, npm run build green."
+  - "View state lives in the store keyed by node id — never mutate consumer data objects."
+  - "No Angular Material, no Angular code in the new packages."
+  - "No npm publish; no virtualization; no Angular wrapper package in this run (explicit non-goals in the spec §7)."
+
+tasks:
+  - id: scaffold
+    prompt: >
+      Per spec §2 and §8 'scaffold details': convert the repo root to an npm workspaces
+      monorepo (workspaces: packages/*), fix the broken install by bumping ng-packagr to
+      ^21.0.0 and @angular/language-service to ^21.2.0 (verify plain `npm install` succeeds
+      without --legacy-peer-deps), create the packages/core and packages/element skeletons
+      (strict tsconfig, vitest, ESLint flat config, vite build for element with lit dep),
+      add root lint/test/build scripts running workspace scripts with --workspaces
+      --if-present (legacy ng build moves to build:app, excluded from the gate), and
+      regenerate package-lock.json. Acceptance: npm install, npm run lint, npm test,
+      npm run build all succeed from a clean checkout.
+
+  - id: core-tree-state
+    prompt: >
+      Depends on scaffold. Implement in packages/core per spec §3.1–§3.2: TreeNodeData
+      (id-keyed, hasChildren lazy marker), TreeStore with expansion state, the cached
+      rows() flat projection (level/setSize/posInSet), setData/addNode/removeNode/
+      updateNode with duplicate-id rejection, and subscribe() with TreeChangeEvent.
+      Vitest tests for every behavior including rows() cache invalidation and
+      unsubscribe. No selection/lazy/filter logic yet — stub those fields as defaults.
+
+  - id: core-selection
+    prompt: >
+      Depends on core-tree-state. Implement selection per spec §3.2–§3.3 in
+      packages/core: multi mode with cascade check/uncheck, indeterminate computed via
+      ancestor-path-local recomputation (never full-tree rescans), disabled-node
+      handling, setAllChecked, getChecked (topmost fully-checked) and getCheckedLeaves,
+      single mode select() persisted in the store, initialChecked. Tests must cover
+      cascade invariants, mixed/disabled edge cases, and 'checked' events.
+
+  - id: core-lazy
+    prompt: >
+      Depends on core-selection. Implement lazy loading per spec §3.3 'Lazy loading' in
+      packages/core: expand() triggers loadChildren for hasChildren nodes, loading and
+      loadError per-node state, retryLoad, loadOnce, cascade + active filter re-applied
+      to newly loaded children, concurrent-expand no-op guard, staleness token so
+      resolutions after setData are discarded, collapse-during-load behavior. Tests use
+      fake timers and cover out-of-order resolutions and rejection/retry.
+
+  - id: core-filter
+    prompt: >
+      Depends on core-lazy. Implement filtering per spec §3.3 'Filtering' in
+      packages/core: setFilter with default case-insensitive substring matcher and
+      custom matcher option, ancestor reveal+expand, matched flag on rows, non-matching
+      subtrees excluded from rows() entirely, NEVER triggering loadChildren, and
+      clearFilter restoring the pre-filter expansion snapshot. After this task, enforce
+      the >=90% line-coverage threshold for packages/core in vitest config. Tests cover
+      filter-then-lazy-load interaction (children loaded while a filter is active get
+      filtered) and empty-result state.
+
+  - id: element-tree
+    prompt: >
+      Depends on core-filter. Implement <sp-tree> in packages/element per spec §4.1 and
+      §4.4 rendering and theming ONLY (a11y and search come in later tasks): Lit
+      component rendering store.rows() as a flat indented list (collapsed/filtered rows
+      absent from DOM), expand/collapse on toggle click, renderNode render prop, custom
+      CSS-token-drawn checkbox/radio visuals (selection event wiring may land in
+      element-a11y), all --sp-tree-* tokens with light/dark defaults, all ::part()
+      names from §4.4, per-node inline spinner and error+retry row markup. Create a
+      minimal dev demo page in packages/element for manual testing. Component DOM tests
+      with vitest browser mode or @web/test-runner — pick one and keep it in the
+      standard npm test flow.
+
+  - id: element-a11y
+    prompt: >
+      Depends on element-tree. Complete <sp-tree> interaction per spec §4.3 and §4.1
+      events: full WAI-ARIA tree pattern (role tree/treeitem, aria-level/setsize/
+      posinset/expanded/checked incl. mixed/disabled/multiselectable, aria-busy),
+      roving tabindex, keyboard navigation (arrows, Home/End, Enter/Space, type-ahead),
+      selection wiring for multi and single modes, the optional showAllNode row wired to
+      setAllChecked, and sp-change/sp-expand/sp-collapse events with the payload shapes
+      from the spec (allSelected flag, no sentinel ALL node). DOM tests for keyboard nav
+      and event payloads.
+
+  - id: element-search-lazy
+    prompt: >
+      Depends on element-a11y. Add the search and lazy-load UI to <sp-tree> per spec
+      §4.1: searchable prop rendering a debounced (250ms) search input with clear
+      button, match highlighting via <mark part="match">, 'No results' empty state,
+      wiring of loadChildren with inline spinner, error row with Retry button firing
+      retryLoad, and sp-load-error event. DOM tests: search reveal/clear-restore, empty
+      state, load error retry.
+
+  - id: element-select
+    prompt: >
+      Depends on element-a11y. Implement <sp-tree-select> in packages/element per spec
+      §4.2: single component with variant=dropdown|overlay, chips trigger field
+      (per-chip remove updating cascade, 2-row wrap then +N overflow chip,
+      placeholder), floating-ui positioned panel for dropdown (flip/shift/size) and
+      modal sheet for overlay, open/close semantics (Escape, click-outside, focus into
+      panel on open and back to trigger on close, panel removed from DOM when closed),
+      and form participation via formAssociated ElementInternals. DOM tests for chips,
+      open/close focus management, and that a closed panel leaves no tree nodes in the
+      DOM.
+
+  - id: e2e-examples
+    prompt: >
+      Depends on element-search-lazy and element-select. Build examples/ per spec §5:
+      plain-HTML demo with the India/USA dataset, fake async loadChildren, inline +
+      dropdown + overlay variants each with their own store/data copy, and a
+      token-override themed section; plus examples/react.tsx compile-checked in the
+      build. Then write the Playwright e2e suite covering exactly the six journeys in
+      spec §5 against the demo, wired into npm test at the root (use the chromium
+      already under ~/.cache/ms-playwright with playwright-core executablePath if
+      browser download fails).
+
+  - id: docs
+    prompt: >
+      Depends on e2e-examples. Write the docs per spec §6: packages/core/README.md (API
+      + §3.3 semantics), packages/element/README.md (attributes/events/parts + React/
+      Vue/plain-JS usage), docs/theming.md (full token table with defaults + dark-theme
+      worked example), docs/migration-v3-to-v4.md (legacy Node/Config mapping incl.
+      children:[] -> hasChildren, value -> id uniqueness, sentinel-ALL -> allSelected),
+      and rewrite the root README.md around v4 with the legacy Angular demo marked
+      frozen. Verify every code sample in the docs actually type-checks against the
+      built packages.
+
+done_when:
+  - "All tasks landed on autopilot/integration"
+  - "npm install succeeds from a clean checkout without --legacy-peer-deps"
+  - "wd check passes on autopilot/integration (lint, test incl. core >=90% coverage and Playwright e2e, build)"
+  - "The six e2e journeys from spec §5 pass, including: lazy-expanded children render without an extra click, and search shows results with no stuck progress indicator"
+  - "examples/index.html renders all three variants with independent state and a theme-override section"

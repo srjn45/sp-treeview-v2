@@ -43,3 +43,9 @@ testem.log
 Thumbs.db
 
 .angular/*
+
+# npm workspaces / new packages
+packages/*/node_modules
+packages/*/dist
+packages/*/coverage
+*.tsbuildinfo

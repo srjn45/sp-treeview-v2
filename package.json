@@ -2,13 +2,19 @@
   "name": "sp-treeview-v2",
   "version": "3.0.0",
   "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "npm run build --workspaces --if-present",
+    "build:app": "ng build",
     "build:lib": "ng-packagr -p ng-package.json",
-    "test": "ng test",
-    "lint": "ng lint"
+    "test": "npm run test --workspaces --if-present",
+    "test:app": "ng test",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:app": "ng lint"
   },
   "keywords": [
     "angular",
@@ -45,16 +51,18 @@
     "@angular-devkit/build-angular": "^21.2.5",
     "@angular/cli": "^21.2.5",
     "@angular/compiler-cli": "^21.2.6",
-    "@angular/language-service": "^19.2.20",
+    "@angular/language-service": "^21.2.0",
     "@types/jasmine": "~5.1.0",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
     "jasmine-core": "~5.1.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "ng-packagr": "^19.0.0",
-    "typescript": "~5.9.0"
+    "ng-packagr": "^21.0.0",
+    "typescript": "~5.9.0",
+    "typescript-eslint": "^8.0.0"
   }
 }

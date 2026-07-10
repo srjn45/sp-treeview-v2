@@ -13,6 +13,9 @@ interface InternalNode<T> {
   parentId: string | null;
 }
 
+// Incremented on every setData() call to detect stale async resolutions.
+type Epoch = number;
+
 export class TreeStore<T = unknown> {
   // ---- internal tree structure ----
   private _nodeMap = new Map<string, InternalNode<T>>();
@@ -30,11 +33,14 @@ export class TreeStore<T = unknown> {
   private _indeterminateSet = new Set<string>();
   private _selectedId: string | null = null;
 
-  // ---- stub state: lazy (implemented by core-lazy task) ----
+  // ---- lazy loading state ----
   private _loadChildren: TreeStoreOptions<T>['loadChildren'];
   private _loadOnce: boolean;
   private _loadingSet = new Set<string>();
   private _loadErrors = new Map<string, Error>();
+  private _loadedSet = new Set<string>();    // nodes whose children have been loaded at least once
+  private _pendingExpand = new Set<string>(); // nodes to auto-expand when their load resolves
+  private _storeEpoch: Epoch = 0;            // incremented by setData() to detect stale resolutions
 
   // ---- stub state: filter (implemented by core-filter task) ----
   private _matcher: TreeStoreOptions<T>['matcher'];
@@ -121,16 +127,52 @@ export class TreeStore<T = unknown> {
   expand(id: string): void {
     if (!this._nodeMap.has(id)) return;
     if (this._expanded.has(id)) return;
+
+    const internal = this._nodeMap.get(id)!;
+    const node = internal.data;
+
+    // Lazy node with a loadChildren callback configured
+    if (node.hasChildren === true && node.children === undefined && this._loadChildren) {
+      const alreadyLoaded = this._loadedSet.has(id);
+
+      if (alreadyLoaded && this._loadOnce) {
+        // Children cached; expand immediately without re-loading
+        this._expanded.add(id);
+        this._invalidate();
+        this._emit({ type: 'rows' });
+        return;
+      }
+
+      // Concurrent-expand guard: no-op if a load is already in flight
+      if (this._loadingSet.has(id)) return;
+
+      // Mark intent to expand on load success, then trigger the load
+      this._pendingExpand.add(id);
+      this._triggerLoad(id);
+      return;
+    }
+
+    // Non-lazy (or lazy with no loadChildren): regular expand
     this._expanded.add(id);
     this._invalidate();
     this._emit({ type: 'rows' });
   }
 
   collapse(id: string): void {
-    if (!this._expanded.has(id)) return;
+    const wasExpanded = this._expanded.has(id);
+    const wasPendingExpand = this._pendingExpand.has(id);
+
+    if (!wasExpanded && !wasPendingExpand) return;
+
     this._expanded.delete(id);
-    this._invalidate();
-    this._emit({ type: 'rows' });
+    // Cancel auto-expand intent (load stays in flight per spec)
+    this._pendingExpand.delete(id);
+
+    if (wasExpanded) {
+      this._invalidate();
+      this._emit({ type: 'rows' });
+    }
+    // If only wasPendingExpand: loading continues but no visible rows() change yet
   }
 
   toggleExpanded(id: string): void {
@@ -146,12 +188,15 @@ export class TreeStore<T = unknown> {
   // ================================================================
 
   setData(data: TreeNodeData<T>[]): void {
+    this._storeEpoch++;  // invalidate any in-flight loads
     this._expanded.clear();
     this._checkedSet.clear();
     this._indeterminateSet.clear();
     this._selectedId = null;
     this._loadingSet.clear();
     this._loadErrors.clear();
+    this._loadedSet.clear();
+    this._pendingExpand.clear();
     this._matchedSet.clear();
     this._filterQuery = '';
     this._loadData(data);
@@ -291,10 +336,17 @@ export class TreeStore<T = unknown> {
   clearFilter(): void { /* stub */ }
 
   // ================================================================
-  // commands: lazy stubs (core-lazy task implements)
+  // commands: lazy loading
   // ================================================================
 
-  retryLoad(_id: string): void { /* stub */ }
+  retryLoad(id: string): void {
+    if (!this._loadChildren) return;
+    if (!this._nodeMap.has(id)) return;
+    if (!this._loadErrors.has(id)) return;   // only retry after a failure
+    if (this._loadingSet.has(id)) return;    // guard against concurrent retry
+    this._pendingExpand.add(id);             // auto-expand on success
+    this._triggerLoad(id);
+  }
 
   // ================================================================
   // reactivity
@@ -398,6 +450,8 @@ export class TreeStore<T = unknown> {
     this._indeterminateSet.delete(node.data.id);
     this._loadingSet.delete(node.data.id);
     this._loadErrors.delete(node.data.id);
+    this._loadedSet.delete(node.data.id);
+    this._pendingExpand.delete(node.data.id);
     this._matchedSet.delete(node.data.id);
     for (const child of node.children) {
       this._purgeInternal(child);
@@ -496,6 +550,93 @@ export class TreeStore<T = unknown> {
   /** True for leaf nodes: no children key on the data and no lazy marker. */
   private _isLeaf(node: InternalNode<T>): boolean {
     return node.data.children === undefined && node.data.hasChildren !== true;
+  }
+
+  /**
+   * Start a loadChildren async fetch for the given node id.
+   * Guards (concurrent, staleness) must be checked before calling.
+   */
+  private _triggerLoad(id: string): void {
+    if (!this._loadChildren) return;
+    const internal = this._nodeMap.get(id);
+    if (!internal) return;
+
+    const epoch: Epoch = this._storeEpoch;
+
+    this._loadingSet.add(id);
+    this._loadErrors.delete(id);
+    this._invalidate();
+    this._emit({ type: 'load', id, status: 'start' });
+    this._emit({ type: 'rows' });
+
+    void this._loadChildren(internal.data).then(
+      (children) => {
+        // Staleness: setData() was called while this load was in flight — discard
+        if (this._storeEpoch !== epoch) return;
+        const node = this._nodeMap.get(id);
+        if (!node) return;
+
+        this._loadingSet.delete(id);
+        this._loadedSet.add(id);
+
+        // Replace any previously loaded children (covers loadOnce:false re-loads)
+        for (const old of node.children) {
+          this._purgeInternal(old);
+        }
+        node.children = [];
+
+        // Attach newly loaded children
+        const loaded = children.map(c => this._buildInternal(c, id));
+        for (const child of loaded) {
+          this._registerInternal(child);
+        }
+        node.children = loaded;
+
+        // Re-apply selection cascade to newly loaded children
+        if (this._selection === 'multi' && this._cascade && loaded.length > 0) {
+          const changed = new Set<string>();
+          const parentState = this._getCheckedState(id);
+          if (parentState === 'checked') {
+            // Checked parent → cascade checked state down to new children
+            this._cascadeDown(node, true, changed);
+          }
+          // Recompute parent's own state from all (now-known) children
+          const newParentState = this._computeStateFromChildren(node);
+          this._applyState(id, newParentState, changed);
+          // Propagate up to ancestors
+          this._recomputeAncestors(id, changed);
+          if (changed.size > 0) {
+            this._emit({ type: 'checked', ids: [...changed] });
+          }
+        }
+
+        // Hook point for core-filter task: re-apply active filter to new children here
+        // (when _filterQuery is non-empty, apply _matcher over the new subtree)
+
+        // Auto-expand only if collapse() did not cancel the intent during loading
+        if (this._pendingExpand.has(id)) {
+          this._pendingExpand.delete(id);
+          this._expanded.add(id);
+        }
+
+        this._invalidate();
+        this._emit({ type: 'load', id, status: 'success' });
+        this._emit({ type: 'rows' });
+      },
+      (error: unknown) => {
+        // Staleness: discard if tree was replaced while loading
+        if (this._storeEpoch !== epoch) return;
+        if (!this._nodeMap.has(id)) return;
+
+        this._loadingSet.delete(id);
+        this._pendingExpand.delete(id);
+        this._loadErrors.set(id, error instanceof Error ? error : new Error(String(error)));
+
+        this._invalidate();
+        this._emit({ type: 'load', id, status: 'error' });
+        this._emit({ type: 'rows' });
+      }
+    );
   }
 
   private _invalidate(): void {

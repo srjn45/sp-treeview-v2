@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TreeStore } from './tree-store.js';
 import type { TreeNodeData, TreeChangeEvent } from './types.js';
 
@@ -1406,5 +1406,550 @@ describe('selection events', () => {
     store.subscribe(listener);
     store.setChecked('a', true);
     expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §3.3 — lazy loading
+// ---------------------------------------------------------------------------
+
+// Helper: create a deferred promise for fine-grained async control.
+function defer<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+// Helper: flush all timers and pending microtasks (vitest 3 fake timers).
+async function flush() {
+  await vi.runAllTimersAsync();
+}
+
+describe('lazy loading — §3.3', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  // ---- basic load cycle ----
+
+  it('expand triggers loadChildren once; loading:true during, children appear after resolve', async () => {
+    const d = defer<TreeNodeData[]>();
+    const loadChildren = vi.fn(() => d.promise);
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren });
+
+    store.expand('p');
+
+    // Synchronously: loading has started, not yet expanded
+    expect(store.rows()[0]?.loading).toBe(true);
+    expect(store.rows()[0]?.expanded).toBe(false);
+    expect(store.rows()[0]?.loadError).toBeNull();
+    expect(loadChildren).toHaveBeenCalledOnce();
+    expect(loadChildren).toHaveBeenCalledWith(expect.objectContaining({ id: 'p' }));
+
+    d.resolve([leaf('c1'), leaf('c2')]);
+    await flush();
+
+    // After resolve: loading clears, node expands, children visible
+    const rows = store.rows();
+    expect(rows[0]?.loading).toBe(false);
+    expect(rows[0]?.expanded).toBe(true);
+    expect(rows[0]?.loadError).toBeNull();
+    expect(rows).toHaveLength(3); // p, c1, c2
+    expect(rows[1]?.node.id).toBe('c1');
+    expect(rows[2]?.node.id).toBe('c2');
+    expect(store.getNode('c1')).toBeDefined();
+    expect(store.getNode('c2')).toBeDefined();
+  });
+
+  it('load emits load:start then load:success events (and rows events)', async () => {
+    const d = defer<TreeNodeData[]>();
+    const loadChildren = vi.fn(() => d.promise);
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren });
+
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+
+    store.expand('p');
+    expect(events).toContainEqual({ type: 'load', id: 'p', status: 'start' });
+    expect(events).toContainEqual({ type: 'rows' });
+
+    const eventCountBeforeResolve = events.length;
+    d.resolve([leaf('c1')]);
+    await flush();
+
+    expect(events).toContainEqual({ type: 'load', id: 'p', status: 'success' });
+    expect(events.filter(e => e.type === 'rows').length).toBeGreaterThan(
+      events.slice(0, eventCountBeforeResolve).filter(e => e.type === 'rows').length,
+    );
+  });
+
+  // ---- out-of-order resolutions ----
+
+  it('out-of-order resolutions: each node gets its own children correctly', async () => {
+    const d1 = defer<TreeNodeData[]>();
+    const d2 = defer<TreeNodeData[]>();
+    const loadChildren = vi.fn()
+      .mockReturnValueOnce(d1.promise)
+      .mockReturnValueOnce(d2.promise);
+
+    const store = new TreeStore({ data: [lazyBranch('a'), lazyBranch('b')], loadChildren });
+
+    store.expand('a');
+    store.expand('b');
+
+    // Resolve b first
+    d2.resolve([leaf('b1'), leaf('b2')]);
+    await flush();
+
+    expect(store.getNode('b1')).toBeDefined();
+    expect(store.getNode('b2')).toBeDefined();
+    expect(store.getNode('a1')).toBeUndefined(); // not yet loaded
+
+    // Now resolve a
+    d1.resolve([leaf('a1'), leaf('a2')]);
+    await flush();
+
+    expect(store.getNode('a1')).toBeDefined();
+    expect(store.getNode('a2')).toBeDefined();
+
+    // Verify each parent expanded and has the right children
+    store.collapse('b');
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'a')?.expanded).toBe(true);
+    expect(rows.find(r => r.node.id === 'b')?.expanded).toBe(false);
+    expect(rows.find(r => r.node.id === 'a1')).toBeDefined();
+    expect(rows.find(r => r.node.id === 'b1')).toBeUndefined(); // b is collapsed
+  });
+
+  // ---- error + retry ----
+
+  it('rejection sets loadError; retryLoad re-attempts and succeeds', async () => {
+    const error = new Error('network error');
+    const d1 = defer<TreeNodeData[]>();
+    const d2 = defer<TreeNodeData[]>();
+    const loadChildren = vi.fn()
+      .mockReturnValueOnce(d1.promise)
+      .mockReturnValueOnce(d2.promise);
+
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren });
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+
+    store.expand('p');
+    d1.reject(error);
+    await flush();
+
+    // After failure
+    expect(store.rows()[0]?.loadError).toBe(error);
+    expect(store.rows()[0]?.loading).toBe(false);
+    expect(store.rows()[0]?.expanded).toBe(false);
+    expect(events).toContainEqual({ type: 'load', id: 'p', status: 'error' });
+
+    // Retry
+    const eventsBeforeRetry = events.length;
+    store.retryLoad('p');
+    expect(store.rows()[0]?.loading).toBe(true);
+    expect(store.rows()[0]?.loadError).toBeNull();
+
+    d2.resolve([leaf('c1')]);
+    await flush();
+
+    expect(store.rows()[0]?.loadError).toBeNull();
+    expect(store.rows()[0]?.loading).toBe(false);
+    expect(store.rows()[0]?.expanded).toBe(true);
+    expect(store.rows()).toHaveLength(2);
+    expect(events.slice(eventsBeforeRetry)).toContainEqual({ type: 'load', id: 'p', status: 'start' });
+    expect(events.slice(eventsBeforeRetry)).toContainEqual({ type: 'load', id: 'p', status: 'success' });
+  });
+
+  it('loadError is an Error object even when rejection value is a string', async () => {
+    const d = defer<TreeNodeData[]>();
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren: () => d.promise });
+    store.expand('p');
+    d.reject('raw string error');
+    await flush();
+
+    const err = store.rows()[0]?.loadError;
+    expect(err).toBeInstanceOf(Error);
+    expect(err?.message).toBe('raw string error');
+  });
+
+  it('load emits load:error event', async () => {
+    const d = defer<TreeNodeData[]>();
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren: () => d.promise });
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+
+    store.expand('p');
+    d.reject(new Error('fail'));
+    await flush();
+
+    expect(events).toContainEqual({ type: 'load', id: 'p', status: 'error' });
+  });
+
+  it('retryLoad is a no-op when there is no error', async () => {
+    const loadChildren = vi.fn().mockResolvedValue([leaf('c1')]);
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren });
+
+    store.expand('p');
+    await flush();
+
+    const callCount = loadChildren.mock.calls.length;
+    store.retryLoad('p'); // no error exists
+    await flush();
+    expect(loadChildren.mock.calls.length).toBe(callCount);
+  });
+
+  it('retryLoad is a no-op when loadChildren is not configured', () => {
+    const store = new TreeStore({ data: [lazyBranch('p')] });
+    expect(() => store.retryLoad('p')).not.toThrow();
+  });
+
+  it('retryLoad is a no-op for unknown id', () => {
+    const loadChildren = vi.fn();
+    const store = new TreeStore({ data: [], loadChildren });
+    expect(() => store.retryLoad('ghost')).not.toThrow();
+    expect(loadChildren).not.toHaveBeenCalled();
+  });
+
+  // ---- loadOnce ----
+
+  it('loadOnce:true (default) — children cached; loadChildren called only once across expand/collapse/expand', async () => {
+    const loadChildren = vi.fn().mockResolvedValue([leaf('c1')]);
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren, loadOnce: true });
+
+    store.expand('p');
+    await flush();
+    expect(loadChildren).toHaveBeenCalledOnce();
+
+    store.collapse('p');
+    store.expand('p'); // should NOT call loadChildren again
+
+    expect(loadChildren).toHaveBeenCalledOnce(); // still only once
+    expect(store.rows()[0]?.expanded).toBe(true); // expanded immediately from cache
+    expect(store.rows()[0]?.loading).toBe(false);
+  });
+
+  it('loadOnce:false — reload triggered on each expand after collapse', async () => {
+    const d1 = defer<TreeNodeData[]>();
+    const d2 = defer<TreeNodeData[]>();
+    const loadChildren = vi.fn()
+      .mockReturnValueOnce(d1.promise)
+      .mockReturnValueOnce(d2.promise);
+
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren, loadOnce: false });
+
+    store.expand('p');
+    d1.resolve([leaf('c1')]);
+    await flush();
+    expect(loadChildren).toHaveBeenCalledOnce();
+    expect(store.rows()).toHaveLength(2); // p, c1
+
+    store.collapse('p');
+    store.expand('p'); // loadOnce:false → re-loads
+    expect(loadChildren).toHaveBeenCalledTimes(2);
+    expect(store.rows()[0]?.loading).toBe(true);
+
+    d2.resolve([leaf('c1-new'), leaf('c2-new')]);
+    await flush();
+
+    expect(store.rows()).toHaveLength(3); // p, c1-new, c2-new
+    expect(store.getNode('c1-new')).toBeDefined();
+    expect(store.getNode('c1')).toBeUndefined(); // old child replaced
+  });
+
+  // ---- concurrent-expand guard ----
+
+  it('concurrent-expand: second expand while loading is a no-op', async () => {
+    const d = defer<TreeNodeData[]>();
+    const loadChildren = vi.fn(() => d.promise);
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren });
+
+    store.expand('p'); // starts load
+    store.expand('p'); // no-op: concurrent guard
+    store.expand('p'); // no-op again
+
+    expect(loadChildren).toHaveBeenCalledOnce();
+
+    d.resolve([leaf('c1')]);
+    await flush();
+
+    expect(store.rows()).toHaveLength(2); // p, c1 — only one load happened
+  });
+
+  // ---- staleness token ----
+
+  it('staleness: resolution arriving after setData() is discarded', async () => {
+    const d = defer<TreeNodeData[]>();
+    const loadChildren = vi.fn(() => d.promise);
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren });
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+
+    store.expand('p');
+    expect(store.rows()[0]?.loading).toBe(true);
+
+    // Replace the tree while the load is still in flight
+    store.setData([leaf('new-root')]);
+    expect(store.getNode('p')).toBeUndefined();
+    expect(store.getNode('new-root')).toBeDefined();
+
+    // Resolve the stale load
+    d.resolve([leaf('stale-child')]);
+    await flush();
+
+    // Stale result discarded: stale-child never inserted, new-root unaffected
+    expect(store.getNode('stale-child')).toBeUndefined();
+    expect(store.rows()).toHaveLength(1);
+    expect(store.rows()[0]?.node.id).toBe('new-root');
+    // No load:success event should have been emitted after setData
+    const successEvents = events.filter(e => e.type === 'load' && e.status === 'success');
+    expect(successEvents).toHaveLength(0);
+  });
+
+  it('staleness: second setData() with two in-flight loads discards both', async () => {
+    const d1 = defer<TreeNodeData[]>();
+    const d2 = defer<TreeNodeData[]>();
+    const loadChildren = vi.fn()
+      .mockReturnValueOnce(d1.promise)
+      .mockReturnValueOnce(d2.promise);
+    const store = new TreeStore({ data: [lazyBranch('a'), lazyBranch('b')], loadChildren });
+
+    store.expand('a');
+    store.expand('b');
+
+    store.setData([leaf('fresh')]);
+
+    d1.resolve([leaf('a1')]);
+    d2.resolve([leaf('b1')]);
+    await flush();
+
+    expect(store.getNode('a1')).toBeUndefined();
+    expect(store.getNode('b1')).toBeUndefined();
+    expect(store.rows()).toHaveLength(1);
+    expect(store.rows()[0]?.node.id).toBe('fresh');
+  });
+
+  // ---- collapse during load ----
+
+  it('collapse-during-load: auto-expand cancelled, children still loaded', async () => {
+    const d = defer<TreeNodeData[]>();
+    const loadChildren = vi.fn(() => d.promise);
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren });
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+
+    store.expand('p');
+    expect(store.rows()[0]?.loading).toBe(true);
+
+    store.collapse('p'); // cancel auto-expand; in-flight load continues
+
+    d.resolve([leaf('c1'), leaf('c2')]);
+    await flush();
+
+    // Children loaded but node remains collapsed
+    expect(store.getNode('c1')).toBeDefined();
+    expect(store.getNode('c2')).toBeDefined();
+    expect(store.rows()[0]?.loading).toBe(false);
+    expect(store.rows()[0]?.expanded).toBe(false);
+    expect(store.rows()).toHaveLength(1); // only 'p' visible, not children
+
+    // load:success is still emitted (children were loaded)
+    expect(events).toContainEqual({ type: 'load', id: 'p', status: 'success' });
+
+    // User can manually expand now (children already loaded → loadOnce:true skips reload)
+    store.expand('p');
+    expect(store.rows()).toHaveLength(3);
+    expect(store.rows()[0]?.expanded).toBe(true);
+  });
+
+  it('collapse-during-load does NOT emit an extra rows event from the collapse itself', () => {
+    const d = defer<TreeNodeData[]>();
+    const loadChildren = vi.fn(() => d.promise);
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren });
+
+    store.expand('p'); // starts load, emits rows
+    const listener = vi.fn();
+    store.subscribe(listener);
+
+    store.collapse('p'); // wasPendingExpand only, not in _expanded → no rows emit
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  // ---- selection cascade on load ----
+
+  it('checked parent: newly loaded children become checked', async () => {
+    const store = new TreeStore({
+      data: [lazyBranch('p')],
+      loadChildren: vi.fn().mockResolvedValue([leaf('c1'), leaf('c2')]),
+      selection: 'multi',
+    });
+
+    store.setChecked('p', true);
+    expect(store.rows()[0]?.checked).toBe('checked');
+
+    store.expand('p');
+    await flush();
+
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'c1')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'c2')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'p')?.checked).toBe('checked');
+  });
+
+  it('unchecked parent: newly loaded children stay unchecked', async () => {
+    const store = new TreeStore({
+      data: [lazyBranch('p')],
+      loadChildren: vi.fn().mockResolvedValue([leaf('c1'), leaf('c2')]),
+      selection: 'multi',
+    });
+
+    store.expand('p');
+    await flush();
+
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'c1')?.checked).toBe('unchecked');
+    expect(rows.find(r => r.node.id === 'c2')?.checked).toBe('unchecked');
+    expect(rows.find(r => r.node.id === 'p')?.checked).toBe('unchecked');
+  });
+
+  it('parent indeterminate recomputed after children load', async () => {
+    // gp → p (lazy). gp has another child gc (checked). gp is indeterminate.
+    // Load p's children. p's children are unchecked → p stays unchecked.
+    // gp recomputed: gc(checked) + p(unchecked) → gp stays indeterminate.
+    const store = new TreeStore({
+      data: [
+        branch('gp', [
+          lazyBranch('p'),
+          leaf('gc'),
+        ]),
+      ],
+      loadChildren: vi.fn().mockResolvedValue([leaf('pc1'), leaf('pc2')]),
+      selection: 'multi',
+    });
+
+    store.setChecked('gc', true); // gp → indeterminate
+    store.expand('gp');
+    store.expand('p');
+    await flush();
+
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'gc')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'pc1')?.checked).toBe('unchecked');
+    expect(rows.find(r => r.node.id === 'p')?.checked).toBe('unchecked');
+    expect(rows.find(r => r.node.id === 'gp')?.checked).toBe('indeterminate');
+  });
+
+  it('checked parent + disabled child: cascade skips disabled; parent remains checked', async () => {
+    const disabledChild: TreeNodeData = { id: 'c-disabled', label: 'c-disabled', disabled: true };
+    const store = new TreeStore({
+      data: [lazyBranch('p')],
+      loadChildren: vi.fn().mockResolvedValue([leaf('c1'), disabledChild]),
+      selection: 'multi',
+    });
+
+    store.setChecked('p', true);
+    store.expand('p');
+    await flush();
+
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'c1')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'c-disabled')?.checked).toBe('unchecked');
+    // Only enabled child (c1) counts → parent checked
+    expect(rows.find(r => r.node.id === 'p')?.checked).toBe('checked');
+  });
+
+  it('cascade emits checked event for newly checked children', async () => {
+    const store = new TreeStore({
+      data: [lazyBranch('p')],
+      loadChildren: vi.fn().mockResolvedValue([leaf('c1'), leaf('c2')]),
+      selection: 'multi',
+    });
+    store.setChecked('p', true);
+
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+
+    store.expand('p');
+    await flush();
+
+    const checkedEvt = events.find(e => e.type === 'checked') as { type: 'checked'; ids: string[] } | undefined;
+    expect(checkedEvt).toBeDefined();
+    expect(checkedEvt?.ids).toContain('c1');
+    expect(checkedEvt?.ids).toContain('c2');
+  });
+
+  it('cascade: false — children stay unchecked even when parent is checked', async () => {
+    const store = new TreeStore({
+      data: [lazyBranch('p')],
+      loadChildren: vi.fn().mockResolvedValue([leaf('c1'), leaf('c2')]),
+      selection: 'multi',
+      cascade: false,
+    });
+
+    store.setChecked('p', true);
+    store.expand('p');
+    await flush();
+
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'p')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'c1')?.checked).toBe('unchecked');
+    expect(rows.find(r => r.node.id === 'c2')?.checked).toBe('unchecked');
+  });
+
+  // ---- lazy node without loadChildren configured ----
+
+  it('lazy node without loadChildren configured: expand is a regular no-op (stays expandable, no load)', () => {
+    const store = new TreeStore({ data: [lazyBranch('p')] });
+    store.expand('p');
+
+    const row = store.rows()[0]!;
+    expect(row.expanded).toBe(true); // treated as a regular expand
+    expect(row.loading).toBe(false);
+    expect(row.loadError).toBeNull();
+  });
+
+  // ---- rows() correctness during/after load ----
+
+  it('rows() shows loading:true and loadError:null during load', async () => {
+    const d = defer<TreeNodeData[]>();
+    const store = new TreeStore({ data: [lazyBranch('p')], loadChildren: () => d.promise });
+
+    store.expand('p');
+    expect(store.rows()[0]?.loading).toBe(true);
+    expect(store.rows()[0]?.loadError).toBeNull();
+    expect(store.rows()[0]?.expanded).toBe(false);
+
+    d.resolve([]);
+    await flush();
+  });
+
+  it('rows() shows loadError and loading:false after rejection', async () => {
+    const err = new Error('fail');
+    const store = new TreeStore({
+      data: [lazyBranch('p')],
+      loadChildren: () => Promise.reject(err),
+    });
+    store.expand('p');
+    await flush();
+
+    expect(store.rows()[0]?.loading).toBe(false);
+    expect(store.rows()[0]?.loadError).toBe(err);
+    expect(store.rows()[0]?.expanded).toBe(false);
+  });
+
+  it('expandable remains true for a lazy node after loading its children', async () => {
+    const store = new TreeStore({
+      data: [lazyBranch('p')],
+      loadChildren: vi.fn().mockResolvedValue([leaf('c1')]),
+    });
+    store.expand('p');
+    await flush();
+
+    // hasChildren:true on data means always expandable
+    expect(store.rows()[0]?.expandable).toBe(true);
   });
 });

@@ -711,3 +711,700 @@ describe('makeNode helper', () => {
     expect(n.children).toBeDefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// helpers for disabled nodes
+// ---------------------------------------------------------------------------
+
+function disabledLeaf(id: string): TreeNodeData {
+  return { id, label: id, disabled: true };
+}
+
+function disabledBranch(id: string, children: TreeNodeData[]): TreeNodeData {
+  return { id, label: id, children, disabled: true };
+}
+
+// ---------------------------------------------------------------------------
+// §3.2 / §3.3 — multi-mode: setChecked / cascade down + up
+// ---------------------------------------------------------------------------
+
+describe('multi-mode: setChecked basic', () => {
+  it('is a no-op when selection mode is not multi', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'none' });
+    store.setChecked('a', true);
+    expect(store.rows()[0]?.checked).toBe('unchecked');
+  });
+
+  it('is a no-op for unknown id', () => {
+    const store = new TreeStore({ data: [], selection: 'multi' });
+    expect(() => store.setChecked('ghost', true)).not.toThrow();
+  });
+
+  it('is a no-op for a disabled node', () => {
+    const store = new TreeStore({ data: [disabledLeaf('a')], selection: 'multi' });
+    store.setChecked('a', true);
+    expect(store.rows()[0]?.checked).toBe('unchecked');
+  });
+
+  it('checking a leaf sets row.checked to checked', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'multi' });
+    store.setChecked('a', true);
+    expect(store.rows()[0]?.checked).toBe('checked');
+  });
+
+  it('unchecking a leaf sets row.checked to unchecked', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'multi' });
+    store.setChecked('a', true);
+    store.setChecked('a', false);
+    expect(store.rows()[0]?.checked).toBe('unchecked');
+  });
+});
+
+describe('multi-mode: cascade down', () => {
+  it('checking a parent cascades to all enabled descendants', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.expand('p');
+    store.setChecked('p', true);
+    const rows = store.rows();
+    expect(rows[0]?.checked).toBe('checked'); // p
+    expect(rows[1]?.checked).toBe('checked'); // c1
+    expect(rows[2]?.checked).toBe('checked'); // c2
+  });
+
+  it('unchecking a parent cascades to all enabled descendants', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.expand('p');
+    store.setChecked('p', true);
+    store.setChecked('p', false);
+    const rows = store.rows();
+    expect(rows[0]?.checked).toBe('unchecked');
+    expect(rows[1]?.checked).toBe('unchecked');
+    expect(rows[2]?.checked).toBe('unchecked');
+  });
+
+  it('cascade stops at disabled children (disabled node not toggled, subtree preserved)', () => {
+    // p
+    //   disabled-b (disabled)
+    //     c (enabled)
+    //   d (enabled)
+    const store = new TreeStore({
+      data: [branch('p', [disabledBranch('b', [leaf('c')]), leaf('d')])],
+      selection: 'multi',
+    });
+    store.setChecked('p', true);
+    expect(store.getNode('b')?.disabled).toBe(true);
+    // b is disabled — not cascaded to
+    expect(store.rows().find(r => r.node.id === 'b')?.checked ?? 'unchecked').toBe('unchecked');
+    // c is under a disabled node — cascade stopped at b, c unchanged
+    // d is enabled and should be checked
+    store.expand('p');
+    store.expand('b');
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'b')?.checked).toBe('unchecked');
+    expect(rows.find(r => r.node.id === 'c')?.checked).toBe('unchecked');
+    expect(rows.find(r => r.node.id === 'd')?.checked).toBe('checked');
+  });
+
+  it('cascade works across three levels', () => {
+    const store = new TreeStore({
+      data: [branch('l1', [branch('l2', [leaf('l3a'), leaf('l3b')])])],
+      selection: 'multi',
+    });
+    store.setChecked('l1', true);
+    expect(store.getNode('l1')?.id).toBe('l1');
+    store.expand('l1');
+    store.expand('l2');
+    const rows = store.rows();
+    for (const row of rows) {
+      expect(row.checked).toBe('checked');
+    }
+  });
+
+  it('cascade: false — only the node itself changes', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+      cascade: false,
+    });
+    store.expand('p');
+    store.setChecked('p', true);
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'p')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'c1')?.checked).toBe('unchecked');
+    expect(rows.find(r => r.node.id === 'c2')?.checked).toBe('unchecked');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §3.3 — indeterminate / ancestor-path-local recomputation
+// ---------------------------------------------------------------------------
+
+describe('multi-mode: indeterminate + ancestor recomputation', () => {
+  it('checking one child makes parent indeterminate', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.expand('p');
+    store.setChecked('c1', true);
+    expect(store.rows().find(r => r.node.id === 'p')?.checked).toBe('indeterminate');
+  });
+
+  it('checking all children makes parent checked', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.expand('p');
+    store.setChecked('c1', true);
+    store.setChecked('c2', true);
+    expect(store.rows().find(r => r.node.id === 'p')?.checked).toBe('checked');
+  });
+
+  it('unchecking one child of a fully-checked parent makes it indeterminate', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.expand('p');
+    store.setChecked('p', true);
+    store.setChecked('c1', false);
+    expect(store.rows().find(r => r.node.id === 'p')?.checked).toBe('indeterminate');
+  });
+
+  it('propagates indeterminate up multiple levels', () => {
+    // gp → p → c1, c2
+    const store = new TreeStore({
+      data: [branch('gp', [branch('p', [leaf('c1'), leaf('c2')])])],
+      selection: 'multi',
+    });
+    store.setChecked('c1', true);
+    store.expand('gp');
+    store.expand('p');
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'p')?.checked).toBe('indeterminate');
+    expect(rows.find(r => r.node.id === 'gp')?.checked).toBe('indeterminate');
+  });
+
+  it('checking all leaves in a subtree promotes ancestors to checked', () => {
+    const store = new TreeStore({
+      data: [branch('gp', [branch('p', [leaf('c1'), leaf('c2')])])],
+      selection: 'multi',
+    });
+    store.setChecked('c1', true);
+    store.setChecked('c2', true);
+    store.expand('gp');
+    store.expand('p');
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'p')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'gp')?.checked).toBe('checked');
+  });
+
+  it('disabled child excluded from ancestor state count', () => {
+    // p has c1 (enabled, unchecked) and c2 (disabled, unchecked)
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), disabledLeaf('c2')])],
+      selection: 'multi',
+    });
+    store.expand('p');
+    store.setChecked('c1', true);
+    // Enabled children of p: only c1. c1 is checked → p should be checked (all enabled = checked)
+    expect(store.rows().find(r => r.node.id === 'p')?.checked).toBe('checked');
+  });
+
+  it('parent with all-disabled children keeps its current state after cascade', () => {
+    // p has only disabled children; ancestor recomputation should not change p's state
+    const store = new TreeStore({
+      data: [branch('p', [disabledLeaf('d1'), disabledLeaf('d2')])],
+      selection: 'multi',
+    });
+    store.expand('p');
+    // p starts unchecked; explicitly check p; cascade skips d1, d2 (disabled)
+    store.setChecked('p', true);
+    expect(store.rows().find(r => r.node.id === 'p')?.checked).toBe('checked');
+    // d1, d2 remain unchecked
+    expect(store.rows().find(r => r.node.id === 'd1')?.checked).toBe('unchecked');
+    expect(store.rows().find(r => r.node.id === 'd2')?.checked).toBe('unchecked');
+  });
+
+  it('grandparent state unchanged when all its direct children are disabled (enabledChildren guard)', () => {
+    // gp → dp (disabled branch) → c (enabled leaf)
+    // Directly setChecked('c') — c itself is not disabled so it proceeds.
+    // Ancestor walk: dp becomes 'checked' (only enabled child is c), then gp is recomputed:
+    //   gp's enabledChildren = [] (dp is disabled) → keep gp's current 'unchecked' state.
+    const store = new TreeStore({
+      data: [{ id: 'gp', label: 'gp', children: [{ id: 'dp', label: 'dp', disabled: true, children: [leaf('c')] }] }],
+      selection: 'multi',
+    });
+    store.setChecked('c', true);
+    store.expand('gp');
+    store.expand('dp');
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'c')?.checked).toBe('checked');
+    // gp has only disabled children → keep unchecked
+    expect(rows.find(r => r.node.id === 'gp')?.checked).toBe('unchecked');
+  });
+
+  it('recomputation is ancestor-path-local: sibling subtrees not rescanned', () => {
+    // two separate subtrees at the root; checking a leaf in one does not touch the other
+    const store = new TreeStore({
+      data: [
+        branch('a', [leaf('a1'), leaf('a2')]),
+        branch('b', [leaf('b1'), leaf('b2')]),
+      ],
+      selection: 'multi',
+    });
+    store.expand('a');
+    store.expand('b');
+    // Check a1 — should only affect a, not b
+    store.setChecked('a1', true);
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'a')?.checked).toBe('indeterminate');
+    expect(rows.find(r => r.node.id === 'b')?.checked).toBe('unchecked');
+    expect(rows.find(r => r.node.id === 'b1')?.checked).toBe('unchecked');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §3.3 — toggleChecked
+// ---------------------------------------------------------------------------
+
+describe('multi-mode: toggleChecked', () => {
+  it('unchecked → checked', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'multi' });
+    store.toggleChecked('a');
+    expect(store.rows()[0]?.checked).toBe('checked');
+  });
+
+  it('checked → unchecked', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'multi' });
+    store.setChecked('a', true);
+    store.toggleChecked('a');
+    expect(store.rows()[0]?.checked).toBe('unchecked');
+  });
+
+  it('indeterminate → checked (cascade fills in descendants)', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.expand('p');
+    store.setChecked('c1', true); // p → indeterminate
+    store.toggleChecked('p');     // indeterminate → check (state !== 'checked')
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'p')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'c1')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'c2')?.checked).toBe('checked');
+  });
+
+  it('is a no-op for non-multi mode', () => {
+    const store = new TreeStore({ data: [leaf('a')] });
+    expect(() => store.toggleChecked('a')).not.toThrow();
+    expect(store.rows()[0]?.checked).toBe('unchecked');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §3.3 — setAllChecked
+// ---------------------------------------------------------------------------
+
+describe('multi-mode: setAllChecked', () => {
+  it('setAllChecked(true) marks all nodes as checked', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.expand('p');
+    store.setAllChecked(true);
+    for (const row of store.rows()) {
+      expect(row.checked).toBe('checked');
+    }
+  });
+
+  it('setAllChecked(false) marks all nodes as unchecked', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.expand('p');
+    store.setAllChecked(true);
+    store.setAllChecked(false);
+    for (const row of store.rows()) {
+      expect(row.checked).toBe('unchecked');
+    }
+  });
+
+  it('setAllChecked does not toggle disabled nodes', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), disabledLeaf('c2')])],
+      selection: 'multi',
+    });
+    store.expand('p');
+    store.setAllChecked(true);
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'p')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'c1')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'c2')?.checked).toBe('unchecked'); // disabled
+  });
+
+  it('is a no-op when selection mode is not multi', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'none' });
+    store.setAllChecked(true);
+    expect(store.rows()[0]?.checked).toBe('unchecked');
+  });
+
+  it('does not emit when nothing changes', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'multi' });
+    store.setAllChecked(false); // already all unchecked
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setAllChecked(false);
+    expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §3.3 — getChecked (topmost fully-checked nodes)
+// ---------------------------------------------------------------------------
+
+describe('multi-mode: getChecked()', () => {
+  it('returns [] when no nodes are checked', () => {
+    const store = new TreeStore({ data: [leaf('a'), leaf('b')], selection: 'multi' });
+    expect(store.getChecked()).toEqual([]);
+  });
+
+  it('returns [] for non-multi mode', () => {
+    const store = new TreeStore({ data: [leaf('a')] });
+    expect(store.getChecked()).toEqual([]);
+  });
+
+  it('returns the topmost fully-checked nodes (not their checked children)', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.setChecked('p', true); // cascades to c1, c2 → p becomes checked
+    const checked = store.getChecked();
+    expect(checked.map(n => n.id)).toEqual(['p']);
+  });
+
+  it('returns individual checked children when parent is not fully checked', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.setChecked('c1', true); // p → indeterminate
+    const checked = store.getChecked();
+    expect(checked.map(n => n.id)).toEqual(['c1']);
+  });
+
+  it('returns root-level checked node without recursing into its descendants', () => {
+    const store = new TreeStore({
+      data: [
+        branch('a', [leaf('a1'), leaf('a2')]),
+        branch('b', [leaf('b1')]),
+      ],
+      selection: 'multi',
+    });
+    store.setChecked('a', true); // cascades a1, a2
+    store.setChecked('b1', true); // b → checked (only enabled child)
+    const checked = store.getChecked().map(n => n.id).sort();
+    expect(checked).toEqual(['a', 'b']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §3.3 — getCheckedLeaves
+// ---------------------------------------------------------------------------
+
+describe('multi-mode: getCheckedLeaves()', () => {
+  it('returns [] when nothing is checked', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'multi' });
+    expect(store.getCheckedLeaves()).toEqual([]);
+  });
+
+  it('returns [] for non-multi mode', () => {
+    const store = new TreeStore({ data: [leaf('a')] });
+    expect(store.getCheckedLeaves()).toEqual([]);
+  });
+
+  it('returns only leaf nodes that are checked', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.setChecked('c1', true); // p stays indeterminate, c1 checked
+    const leaves = store.getCheckedLeaves().map(n => n.id);
+    expect(leaves).toEqual(['c1']);
+  });
+
+  it('does not return a branch node even if fully checked', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.setChecked('p', true); // p, c1, c2 all checked
+    const leaves = store.getCheckedLeaves().map(n => n.id).sort();
+    expect(leaves).toContain('c1');
+    expect(leaves).toContain('c2');
+    expect(leaves).not.toContain('p');
+  });
+
+  it('a lazy node (hasChildren:true) is not a leaf', () => {
+    const store = new TreeStore({
+      data: [lazyBranch('lazy'), leaf('real-leaf')],
+      selection: 'multi',
+    });
+    // setChecked on lazy node — manually test that lazy node excluded from getCheckedLeaves
+    store.setChecked('real-leaf', true);
+    const leaves = store.getCheckedLeaves().map(n => n.id);
+    expect(leaves).toContain('real-leaf');
+    expect(leaves).not.toContain('lazy');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §3.3 — single mode: select()
+// ---------------------------------------------------------------------------
+
+describe('single mode: select()', () => {
+  it('is a no-op for non-single mode', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'none' });
+    store.select('a');
+    expect(store.rows()[0]?.selected).toBe(false);
+  });
+
+  it('is a no-op for unknown id', () => {
+    const store = new TreeStore({ data: [], selection: 'single' });
+    expect(() => store.select('ghost')).not.toThrow();
+  });
+
+  it('select() sets row.selected to true for the node', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'single' });
+    store.select('a');
+    expect(store.rows()[0]?.selected).toBe(true);
+  });
+
+  it('select() also sets checked state on the node', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'single' });
+    store.select('a');
+    expect(store.rows()[0]?.checked).toBe('checked');
+  });
+
+  it('selecting a new node clears the previous selection', () => {
+    const store = new TreeStore({ data: [leaf('a'), leaf('b')], selection: 'single' });
+    store.select('a');
+    store.select('b');
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'a')?.selected).toBe(false);
+    expect(rows.find(r => r.node.id === 'a')?.checked).toBe('unchecked');
+    expect(rows.find(r => r.node.id === 'b')?.selected).toBe(true);
+    expect(rows.find(r => r.node.id === 'b')?.checked).toBe('checked');
+  });
+
+  it('selection persists across multiple rows() calls', () => {
+    // Use a branch store so expand() actually invalidates the cache
+    const store2 = new TreeStore({
+      data: [branch('p', [leaf('c')]), leaf('b')],
+      selection: 'single',
+    });
+    store2.select('b');
+    store2.expand('p'); // invalidates cache
+    const r2 = store2.rows();
+    expect(r2.find(r => r.node.id === 'b')?.selected).toBe(true);
+  });
+
+  it('getSelected() returns the selected node', () => {
+    const store = new TreeStore({ data: [leaf('a'), leaf('b')], selection: 'single' });
+    store.select('a');
+    expect(store.getSelected()?.id).toBe('a');
+  });
+
+  it('getSelected() returns null when nothing selected', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'single' });
+    expect(store.getSelected()).toBeNull();
+  });
+
+  it('getSelected() returns null for non-single mode', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'none' });
+    expect(store.getSelected()).toBeNull();
+  });
+
+  it('getSelected() updates when selection changes', () => {
+    const store = new TreeStore({ data: [leaf('a'), leaf('b')], selection: 'single' });
+    store.select('a');
+    expect(store.getSelected()?.id).toBe('a');
+    store.select('b');
+    expect(store.getSelected()?.id).toBe('b');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §3.3 — initialChecked
+// ---------------------------------------------------------------------------
+
+describe('initialChecked option', () => {
+  it('pre-checks specified ids at construction', () => {
+    const store = new TreeStore({
+      data: [leaf('a'), leaf('b'), leaf('c')],
+      selection: 'multi',
+      initialChecked: ['a', 'c'],
+    });
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'a')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'b')?.checked).toBe('unchecked');
+    expect(rows.find(r => r.node.id === 'c')?.checked).toBe('checked');
+  });
+
+  it('silently ignores unknown ids', () => {
+    expect(() => new TreeStore({
+      data: [],
+      selection: 'multi',
+      initialChecked: ['ghost'],
+    })).not.toThrow();
+  });
+
+  it('silently ignores disabled nodes in initialChecked', () => {
+    const store = new TreeStore({
+      data: [disabledLeaf('d')],
+      selection: 'multi',
+      initialChecked: ['d'],
+    });
+    expect(store.rows()[0]?.checked).toBe('unchecked');
+  });
+
+  it('cascades down when initialChecked contains a parent', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+      initialChecked: ['p'],
+    });
+    store.expand('p');
+    const rows = store.rows();
+    expect(rows.find(r => r.node.id === 'p')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'c1')?.checked).toBe('checked');
+    expect(rows.find(r => r.node.id === 'c2')?.checked).toBe('checked');
+  });
+
+  it('sets ancestor to indeterminate when only one child listed', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+      initialChecked: ['c1'],
+    });
+    store.expand('p');
+    expect(store.rows().find(r => r.node.id === 'p')?.checked).toBe('indeterminate');
+  });
+
+  it('is ignored in non-multi mode', () => {
+    const store = new TreeStore({
+      data: [leaf('a')],
+      selection: 'none',
+      initialChecked: ['a'],
+    });
+    expect(store.rows()[0]?.checked).toBe('unchecked');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §3.3 — events: 'checked' and 'selected'
+// ---------------------------------------------------------------------------
+
+describe('selection events', () => {
+  it('setChecked emits { type: checked, ids } with the node id', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'multi' });
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+    store.setChecked('a', true);
+    const checkedEvt = events.find(e => e.type === 'checked') as { type: 'checked'; ids: string[] };
+    expect(checkedEvt).toBeDefined();
+    expect(checkedEvt.ids).toContain('a');
+  });
+
+  it('setChecked also emits { type: rows }', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'multi' });
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+    store.setChecked('a', true);
+    expect(events.some(e => e.type === 'rows')).toBe(true);
+  });
+
+  it('cascade includes descendant ids in the checked event', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+    store.setChecked('p', true);
+    const checkedEvt = events.find(e => e.type === 'checked') as { type: 'checked'; ids: string[] };
+    expect(checkedEvt.ids).toContain('p');
+    expect(checkedEvt.ids).toContain('c1');
+    expect(checkedEvt.ids).toContain('c2');
+  });
+
+  it('ancestor state change is included in checked event ids', () => {
+    const store = new TreeStore({
+      data: [branch('gp', [branch('p', [leaf('c')])])],
+      selection: 'multi',
+    });
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+    store.setChecked('c', true);
+    const checkedEvt = events.find(e => e.type === 'checked') as { type: 'checked'; ids: string[] };
+    expect(checkedEvt.ids).toContain('c');
+    expect(checkedEvt.ids).toContain('p');
+    expect(checkedEvt.ids).toContain('gp');
+  });
+
+  it('setAllChecked emits { type: checked } with changed ids', () => {
+    const store = new TreeStore({ data: [leaf('a'), leaf('b')], selection: 'multi' });
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+    store.setAllChecked(true);
+    const checkedEvt = events.find(e => e.type === 'checked') as { type: 'checked'; ids: string[] };
+    expect(checkedEvt).toBeDefined();
+    expect(checkedEvt.ids).toContain('a');
+    expect(checkedEvt.ids).toContain('b');
+  });
+
+  it('select() emits { type: selected, id }', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'single' });
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+    store.select('a');
+    const selEvt = events.find(e => e.type === 'selected') as { type: 'selected'; id: string | null };
+    expect(selEvt).toBeDefined();
+    expect(selEvt.id).toBe('a');
+  });
+
+  it('select() also emits { type: rows }', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'single' });
+    const events: TreeChangeEvent[] = [];
+    store.subscribe(e => events.push(e));
+    store.select('a');
+    expect(events.some(e => e.type === 'rows')).toBe(true);
+  });
+
+  it('setChecked no-op (disabled node) does NOT emit', () => {
+    const store = new TreeStore({ data: [disabledLeaf('a')], selection: 'multi' });
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setChecked('a', true);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('setChecked no-op (non-multi mode) does NOT emit', () => {
+    const store = new TreeStore({ data: [leaf('a')], selection: 'none' });
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setChecked('a', true);
+    expect(listener).not.toHaveBeenCalled();
+  });
+});

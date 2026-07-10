@@ -17,7 +17,8 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
     "lint": "eslint src/"
   },
   "engines": {

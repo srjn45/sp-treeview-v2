@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sp-tree dev demo</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; padding: 24px; background: #f9fafb; }
+    h2 { margin: 32px 0 8px; font-size: 1rem; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; }
+    sp-tree { display: block; max-width: 360px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; background: #fff; }
+    .dark-section { background: #111827; padding: 16px; border-radius: 8px; }
+    .dark-section sp-tree { border-color: #374151; }
+  </style>
+</head>
+<body>
+  <h1>sp-tree — dev demo</h1>
+
+  <h2>None selection (expand/collapse)</h2>
+  <sp-tree id="tree-none"></sp-tree>
+
+  <h2>Multi selection (cascade checkboxes)</h2>
+  <sp-tree id="tree-multi" selection="multi"></sp-tree>
+
+  <h2>Single selection (radio)</h2>
+  <sp-tree id="tree-single" selection="single"></sp-tree>
+
+  <h2>Lazy loading</h2>
+  <sp-tree id="tree-lazy"></sp-tree>
+
+  <h2>Custom renderNode</h2>
+  <sp-tree id="tree-custom"></sp-tree>
+
+  <h2>Dark theme (data-theme attribute)</h2>
+  <div class="dark-section">
+    <sp-tree id="tree-dark" data-theme="dark" selection="multi"></sp-tree>
+  </div>
+
+  <script type="module">
+    import { TreeStore } from '../src/index.js';
+    import '../src/sp-tree.js';
+    import { html } from 'lit';
+
+    const indiaUSA = [
+      {
+        id: 'india', label: 'India',
+        children: [
+          { id: 'mh', label: 'Maharashtra', children: [
+            { id: 'mum', label: 'Mumbai' },
+            { id: 'pune', label: 'Pune' },
+          ]},
+          { id: 'ka', label: 'Karnataka', children: [
+            { id: 'blr', label: 'Bengaluru' },
+          ]},
+        ],
+      },
+      {
+        id: 'usa', label: 'USA',
+        children: [
+          { id: 'ca', label: 'California', children: [
+            { id: 'sf', label: 'San Francisco' },
+            { id: 'la', label: 'Los Angeles' },
+          ]},
+          { id: 'ny', label: 'New York', children: [
+            { id: 'nyc', label: 'New York City' },
+          ]},
+        ],
+      },
+    ];
+
+    // None
+    const treeNone = document.getElementById('tree-none');
+    treeNone.store = new TreeStore({ data: indiaUSA });
+
+    // Multi
+    const treeMulti = document.getElementById('tree-multi');
+    treeMulti.store = new TreeStore({ data: JSON.parse(JSON.stringify(indiaUSA)), selection: 'multi', cascade: true });
+    treeMulti.selection = 'multi';
+    treeMulti.addEventListener('sp-change', e => console.log('sp-change', e.detail));
+
+    // Single
+    const treeSingle = document.getElementById('tree-single');
+    treeSingle.store = new TreeStore({ data: JSON.parse(JSON.stringify(indiaUSA)), selection: 'single' });
+    treeSingle.selection = 'single';
+
+    // Lazy
+    const lazyData = [
+      { id: 'lazy-india', label: 'India (lazy)', hasChildren: true },
+      { id: 'lazy-usa', label: 'USA (lazy)', hasChildren: true },
+      { id: 'lazy-fail', label: 'Error node (lazy)', hasChildren: true },
+    ];
+    const childMap = {
+      'lazy-india': [{ id: 'lazy-mh', label: 'Maharashtra' }, { id: 'lazy-ka', label: 'Karnataka' }],
+      'lazy-usa': [{ id: 'lazy-ca', label: 'California' }, { id: 'lazy-ny', label: 'New York' }],
+    };
+    const lazyStore = new TreeStore({
+      data: lazyData,
+      loadChildren: (node) => new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (node.id === 'lazy-fail') return reject(new Error('Failed to load'));
+          resolve(childMap[node.id] ?? []);
+        }, 800);
+      }),
+    });
+    document.getElementById('tree-lazy').store = lazyStore;
+
+    // Custom renderNode
+    const treeCustom = document.getElementById('tree-custom');
+    treeCustom.store = new TreeStore({ data: JSON.parse(JSON.stringify(indiaUSA)), selection: 'multi' });
+    treeCustom.selection = 'multi';
+    treeCustom.renderNode = (node, { row }) => html`
+      <span style="flex:1;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:1.1em">${row.expanded ? '📂' : row.expandable ? '📁' : '📄'}</span>
+        <span>${node.label}</span>
+        ${row.matched ? html`<mark style="background:yellow;padding:0 2px">match</mark>` : ''}
+      </span>
+    `;
+
+    // Dark
+    const treeDark = document.getElementById('tree-dark');
+    treeDark.store = new TreeStore({ data: JSON.parse(JSON.stringify(indiaUSA)), selection: 'multi', cascade: true });
+    treeDark.selection = 'multi';
+  </script>
+</body>
+</html>

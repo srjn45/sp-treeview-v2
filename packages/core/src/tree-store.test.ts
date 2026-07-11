@@ -1070,6 +1070,66 @@ describe('multi-mode: setAllChecked', () => {
 });
 
 // ---------------------------------------------------------------------------
+// isAllChecked() — drives the sp-change allSelected flag
+// ---------------------------------------------------------------------------
+
+describe('multi-mode: isAllChecked()', () => {
+  it('is false initially and true once everything is checked', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    expect(store.isAllChecked()).toBe(false);
+    store.setAllChecked(true);
+    expect(store.isAllChecked()).toBe(true);
+  });
+
+  it('ignores disabled nodes (all enabled checked → true)', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), disabledLeaf('c2')])],
+      selection: 'multi',
+    });
+    store.setAllChecked(true); // leaves c2 (disabled) unchecked
+    expect(store.isAllChecked()).toBe(true);
+  });
+
+  it('is false when only some nodes are checked', () => {
+    const store = new TreeStore({
+      data: [branch('p', [leaf('c1'), leaf('c2')])],
+      selection: 'multi',
+    });
+    store.setChecked('c1', true);
+    expect(store.isAllChecked()).toBe(false);
+  });
+
+  it('accounts for lazily-loaded children', async () => {
+    const store = new TreeStore({
+      data: [lazyBranch('p', 'parent')],
+      selection: 'multi',
+      loadChildren: async () => [leaf('c1'), leaf('c2')],
+    });
+    store.setAllChecked(true); // only 'p' loaded so far → all checked
+    expect(store.isAllChecked()).toBe(true);
+    store.expand('p'); // loads c1/c2; cascade checks them under checked parent
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(store.isAllChecked()).toBe(true);
+  });
+
+  it('is false in non-multi modes', () => {
+    const single = new TreeStore({ data: [leaf('a')], selection: 'single' });
+    single.select('a');
+    expect(single.isAllChecked()).toBe(false);
+  });
+
+  it('is false when the tree has no enabled nodes', () => {
+    const store = new TreeStore({ data: [disabledLeaf('a')], selection: 'multi' });
+    store.setAllChecked(true);
+    expect(store.isAllChecked()).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // §3.3 — getChecked (topmost fully-checked nodes)
 // ---------------------------------------------------------------------------
 

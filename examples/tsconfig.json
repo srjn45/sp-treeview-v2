@@ -7,5 +7,12 @@
     "experimentalDecorators": true,
     "useDefineForClassFields": false
   },
-  "include": ["react.tsx", "vendor.entry.ts", "scripts/**/*.ts", "e2e/**/*.ts"]
+  "include": [
+    "react.tsx",
+    "vendor.entry.ts",
+    "scripts/**/*.ts",
+    "e2e/**/*.ts",
+    "../docs/examples/**/*.ts",
+    "../docs/examples/**/*.tsx"
+  ]
 }

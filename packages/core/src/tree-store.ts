@@ -125,6 +125,22 @@ export class TreeStore<T = unknown> {
     return this._nodeMap.get(this._selectedId)?.data ?? null;
   }
 
+  /**
+   * Multi mode: true iff at least one non-disabled node exists and every
+   * non-disabled node (including lazily-loaded ones) is checked — i.e. the
+   * exact set `setAllChecked(true)` targets. Drives the `allSelected` flag.
+   */
+  isAllChecked(): boolean {
+    if (this._selection !== 'multi') return false;
+    let anyEnabled = false;
+    for (const [id, node] of this._nodeMap) {
+      if (node.data.disabled) continue;
+      anyEnabled = true;
+      if (!this._checkedSet.has(id)) return false;
+    }
+    return anyEnabled;
+  }
+
   // ================================================================
   // commands: expansion
   // ================================================================

@@ -1,8 +1,30 @@
 import { LitElement, html, css, nothing, type TemplateResult, type PropertyValues } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
-import { TreeStore, type TreeNodeData, type Row, type SelectionMode } from '@sp-treeview/core';
+import { customElement, property } from 'lit/decorators.js';
+import { TreeStore, type TreeNodeData, type Row, type SelectionMode, type CheckedState } from '@sp-treeview/core';
 
 type RenderNodeFn<T> = (node: TreeNodeData<T>, ctx: { row: Row<T>; store: TreeStore<T> }) => TemplateResult;
+
+/**
+ * Internal sentinel id for the optional "All" row. It is NOT a node in the
+ * consumer data (there is no sentinel ALL node); it only participates in the
+ * element's roving-focus navigation and is wired to store.setAllChecked.
+ */
+const ALL_ID = '__sp_all__';
+
+/** How long (ms) type-ahead keystrokes accumulate before the buffer resets. */
+const TYPEAHEAD_RESET_MS = 500;
+
+/** A single navigable row (a data row or the synthetic "All" row). */
+interface NavItem<T> {
+  id: string;
+  level: number;
+  expandable: boolean;
+  expanded: boolean;
+  disabled: boolean;
+  isAll: boolean;
+  node?: TreeNodeData<T>;
+  row?: Row<T>;
+}
 
 @customElement('sp-tree')
 export class SpTree<T = unknown> extends LitElement {
@@ -20,16 +42,27 @@ export class SpTree<T = unknown> extends LitElement {
   @property({ attribute: false }) store: TreeStore<T> | undefined = undefined;
 
   // ---- internal state ----
-  @state() private _rows: Row<T>[] = [];
+  // _rows drives rendering; kept as a plain field + explicit requestUpdate so
+  // navigation/focus bookkeeping never triggers extra reactive churn.
+  private _rows: Row<T>[] = [];
   private _store: TreeStore<T> | null = null;
   private _unsub: (() => void) | null = null;
-  private _ownedStore = false;
+
+  // ---- roving focus / keyboard state ----
+  private _activeId: string | null = null;   // node id (or ALL_ID) that owns the single tab stop
+  private _shouldFocus = false;               // move DOM focus to the active row after the next render
+  private _typeBuffer = '';
+  private _typeTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ---- lifecycle ----
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._teardown();
+    if (this._typeTimer !== null) {
+      clearTimeout(this._typeTimer);
+      this._typeTimer = null;
+    }
   }
 
   // willUpdate fires before render; mutations here don't schedule a second update.
@@ -40,13 +73,19 @@ export class SpTree<T = unknown> extends LitElement {
     }
   }
 
+  override updated(): void {
+    if (this._shouldFocus) {
+      this._shouldFocus = false;
+      this._focusActive();
+    }
+  }
+
   private _rebuildStore(): void {
     const externalStore = this.store;
     if (externalStore) {
       if (this._store === externalStore) return;
       this._teardown();
       this._store = externalStore;
-      this._ownedStore = false;
     } else {
       this._teardown();
       this._store = new TreeStore<T>({
@@ -56,12 +95,14 @@ export class SpTree<T = unknown> extends LitElement {
         loadOnce: this.loadOnce,
         loadChildren: this.loadChildren,
       });
-      this._ownedStore = true;
     }
     this._unsub = this._store.subscribe(() => {
       this._rows = this._store!.rows();
+      this.requestUpdate();
     });
     this._rows = this._store.rows();
+    // Reset the active row when the underlying store changes.
+    this._activeId = null;
   }
 
   private _teardown(): void {
@@ -70,35 +111,261 @@ export class SpTree<T = unknown> extends LitElement {
     this._store = null;
   }
 
+  // ---- navigation model ----
+
+  private _navList(): NavItem<T>[] {
+    const items: NavItem<T>[] = [];
+    if (this.showAllNode) {
+      items.push({ id: ALL_ID, level: 1, expandable: false, expanded: false, disabled: false, isAll: true });
+    }
+    for (const row of this._rows) {
+      items.push({
+        id: row.node.id,
+        level: row.level,
+        expandable: row.expandable,
+        expanded: row.expanded,
+        disabled: !!row.node.disabled,
+        isAll: false,
+        node: row.node,
+        row,
+      });
+    }
+    return items;
+  }
+
+  /** Ensure _activeId points at a currently-present nav item (falls back to first). */
+  private _normalizeActive(nav: NavItem<T>[]): void {
+    if (nav.length === 0) {
+      this._activeId = null;
+      return;
+    }
+    if (this._activeId === null || !nav.some(n => n.id === this._activeId)) {
+      this._activeId = nav[0]!.id;
+    }
+  }
+
+  private _setActive(id: string): void {
+    this._activeId = id;
+    this._shouldFocus = true;
+    this.requestUpdate();
+  }
+
+  private _focusActive(): void {
+    if (this._activeId === null) return;
+    const treeitems = this.shadowRoot?.querySelectorAll<HTMLElement>('[role="treeitem"]');
+    treeitems?.forEach(el => {
+      if (el.dataset['navId'] === this._activeId) el.focus();
+    });
+  }
+
+  private _findParent(nav: NavItem<T>[], idx: number): NavItem<T> | null {
+    const level = nav[idx]!.level;
+    for (let i = idx - 1; i >= 0; i--) {
+      if (nav[i]!.level < level) return nav[i]!;
+    }
+    return null;
+  }
+
+  // ---- keyboard ----
+
+  private _onKeydown(e: KeyboardEvent): void {
+    const nav = this._navList();
+    if (nav.length === 0) return;
+
+    let idx = nav.findIndex(n => n.id === this._activeId);
+    if (idx === -1) idx = 0;
+    const cur = nav[idx]!;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        this._setActive(nav[Math.min(idx + 1, nav.length - 1)]!.id);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        this._setActive(nav[Math.max(idx - 1, 0)]!.id);
+        break;
+      case 'Home':
+        e.preventDefault();
+        this._setActive(nav[0]!.id);
+        break;
+      case 'End':
+        e.preventDefault();
+        this._setActive(nav[nav.length - 1]!.id);
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        if (cur.expandable && !cur.expanded) {
+          this._expandRow(cur);
+        } else if (cur.expandable && cur.expanded && idx + 1 < nav.length) {
+          // Move to the first child (immediately follows an expanded parent).
+          this._setActive(nav[idx + 1]!.id);
+        }
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        if (cur.expandable && cur.expanded) {
+          this._collapseRow(cur);
+        } else {
+          const parent = this._findParent(nav, idx);
+          if (parent) this._setActive(parent.id);
+        }
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        this._activate(cur);
+        break;
+      default:
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          e.preventDefault();
+          this._typeAhead(e.key, nav, idx);
+        }
+        break;
+    }
+  }
+
+  private _typeAhead(char: string, nav: NavItem<T>[], idx: number): void {
+    if (this._typeTimer !== null) clearTimeout(this._typeTimer);
+    this._typeBuffer += char.toLowerCase();
+    this._typeTimer = setTimeout(() => { this._typeBuffer = ''; }, TYPEAHEAD_RESET_MS);
+
+    const buffer = this._typeBuffer;
+    const labelOf = (n: NavItem<T>): string => (n.isAll ? 'all' : (n.node?.label ?? '')).toLowerCase();
+    const n = nav.length;
+    // On the first character search from the next row; while building a word,
+    // include the current row so a match can stay put.
+    const start = buffer.length > 1 ? 0 : 1;
+    for (let i = start; i < start + n; i++) {
+      const cand = nav[(idx + i) % n]!;
+      if (labelOf(cand).startsWith(buffer)) {
+        this._setActive(cand.id);
+        return;
+      }
+    }
+  }
+
+  // ---- interaction handlers (also emit events) ----
+
+  private _activate(item: NavItem<T>): void {
+    if (item.isAll) {
+      this._toggleAll();
+      return;
+    }
+    const node = item.node!;
+    if (node.disabled) return;
+    if (this.selection === 'multi') {
+      this._store!.toggleChecked(node.id);
+      this._dispatchChange();
+    } else if (this.selection === 'single') {
+      this._store!.select(node.id);
+      this._dispatchChange();
+    } else if (item.expandable && item.row) {
+      this._toggleExpanded(item.row);
+    }
+  }
+
+  private _toggleExpanded(row: Row<T>): void {
+    const willExpand = !row.expanded;
+    this._store!.toggleExpanded(row.node.id);
+    this._dispatch(willExpand ? 'sp-expand' : 'sp-collapse', { node: row.node });
+  }
+
+  private _expandRow(item: NavItem<T>): void {
+    if (!item.node) return;
+    this._store!.expand(item.node.id);
+    this._dispatch('sp-expand', { node: item.node });
+  }
+
+  private _collapseRow(item: NavItem<T>): void {
+    if (!item.node) return;
+    this._store!.collapse(item.node.id);
+    this._dispatch('sp-collapse', { node: item.node });
+  }
+
+  private _toggleAll(): void {
+    const all = this._store!.isAllChecked();
+    this._store!.setAllChecked(!all);
+    this._dispatchChange();
+  }
+
+  private _toggleChecked(node: TreeNodeData<T>): void {
+    if (node.disabled) return;
+    this._store!.toggleChecked(node.id);
+    this._dispatchChange();
+  }
+
+  private _select(node: TreeNodeData<T>): void {
+    if (node.disabled) return;
+    this._store!.select(node.id);
+    this._dispatchChange();
+  }
+
+  private _dispatchChange(): void {
+    if (this.selection === 'single') {
+      this._dispatch('sp-change', { selected: this._store!.getSelected() });
+    } else if (this.selection === 'multi') {
+      this._dispatch('sp-change', {
+        checked: this._store!.getChecked(),
+        allSelected: this._store!.isAllChecked(),
+      });
+    }
+  }
+
+  private _dispatch(type: string, detail: unknown): void {
+    this.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }));
+  }
+
   // ---- rendering ----
 
   override render(): TemplateResult {
     if (!this._store) return html``;
     const store = this._store;
+    const nav = this._navList();
+    this._normalizeActive(nav);
+    const activeId = this._activeId;
     const rows = this._rows;
 
     return html`
-      <div part="tree" role="presentation">
-        ${this.showAllNode ? this._renderAllRow(store) : nothing}
-        ${rows.map(row => this._renderRow(row, store))}
-        ${rows.length === 0 && !this.showAllNode ? html`<div part="empty" class="empty">No results</div>` : nothing}
+      <div
+        part="tree"
+        role="tree"
+        aria-multiselectable=${this.selection === 'multi' ? 'true' : nothing}
+        @keydown=${this._onKeydown}
+      >
+        ${this.showAllNode ? this._renderAllRow(store, activeId) : nothing}
+        ${rows.map(row => this._renderRow(row, store, activeId))}
+        ${rows.length === 0 && !this.showAllNode ? html`<div part="empty" class="empty" role="presentation">No results</div>` : nothing}
       </div>
     `;
   }
 
-  private _renderAllRow(store: TreeStore<T>): TemplateResult {
-    const allChecked = store.rows().every(r => r.checked === 'checked') && store.rows().length > 0;
+  private _renderAllRow(store: TreeStore<T>, activeId: string | null): TemplateResult {
+    const all = store.isAllChecked();
+    const anyChecked = store.getChecked().length > 0 || store.getCheckedLeaves().length > 0;
+    const state: CheckedState = all ? 'checked' : anyChecked ? 'indeterminate' : 'unchecked';
     return html`
-      <div part="row all-row" class="row all-row" data-level="1">
+      <div
+        part="row all-row"
+        class="row all-row"
+        role="treeitem"
+        data-nav-id=${ALL_ID}
+        data-level="1"
+        aria-level="1"
+        aria-checked=${state === 'indeterminate' ? 'mixed' : String(state === 'checked')}
+        tabindex=${ALL_ID === activeId ? 0 : -1}
+        @click=${() => this._toggleAll()}
+        @focus=${this._onRowFocus(ALL_ID)}
+      >
         <span class="indent" style="--lvl:0"></span>
         <span class="toggle-placeholder"></span>
-        ${this._renderCheckbox('all', allChecked ? 'checked' : 'unchecked', false, () => store.setAllChecked(!allChecked))}
+        ${this._renderCheckbox(state, false, () => this._toggleAll())}
         <span part="label" class="label">All</span>
       </div>
     `;
   }
 
-  private _renderRow(row: Row<T>, store: TreeStore<T>): TemplateResult {
+  private _renderRow(row: Row<T>, store: TreeStore<T>, activeId: string | null): TemplateResult {
     const { node, level, expandable, expanded, checked, selected, loading, loadError } = row;
     const indent = level - 1;
 
@@ -110,8 +377,20 @@ export class SpTree<T = unknown> extends LitElement {
       <div
         part="row"
         class="row ${selected ? 'selected' : ''} ${node.disabled ? 'disabled' : ''}"
+        role="treeitem"
+        data-nav-id=${node.id}
         data-id=${node.id}
         data-level=${level}
+        aria-level=${level}
+        aria-setsize=${row.setSize}
+        aria-posinset=${row.posInSet}
+        aria-expanded=${expandable ? String(expanded) : nothing}
+        aria-checked=${this._ariaChecked(row)}
+        aria-disabled=${node.disabled ? 'true' : nothing}
+        aria-busy=${loading ? 'true' : nothing}
+        tabindex=${node.id === activeId ? 0 : -1}
+        @click=${() => this._onRowClick(row)}
+        @focus=${this._onRowFocus(node.id)}
       >
         <span class="indent" style="--lvl:${indent}"></span>
 
@@ -119,7 +398,7 @@ export class SpTree<T = unknown> extends LitElement {
           ? html`<button
               part="toggle"
               class="toggle ${expanded ? 'expanded' : ''}"
-              @click=${(e: Event) => { e.stopPropagation(); store.toggleExpanded(node.id); }}
+              @click=${(e: Event) => { e.stopPropagation(); this._toggleExpanded(row); }}
               tabindex="-1"
               aria-hidden="true"
             >
@@ -130,10 +409,10 @@ export class SpTree<T = unknown> extends LitElement {
           : html`<span class="toggle-placeholder"></span>`}
 
         ${this.selection === 'multi'
-          ? this._renderCheckbox(node.id, checked, !!node.disabled, () => { if (!node.disabled) store.toggleChecked(node.id); })
+          ? this._renderCheckbox(checked, !!node.disabled, () => this._toggleChecked(node))
           : nothing}
         ${this.selection === 'single'
-          ? this._renderRadio(node.id, selected, !!node.disabled, () => { if (!node.disabled) store.select(node.id); })
+          ? this._renderRadio(selected, !!node.disabled, () => this._select(node))
           : nothing}
 
         ${labelContent}
@@ -142,7 +421,7 @@ export class SpTree<T = unknown> extends LitElement {
       </div>
 
       ${loadError
-        ? html`<div part="error" class="error-row" data-id=${node.id}>
+        ? html`<div part="error" class="error-row" role="presentation" data-id=${node.id}>
             <span class="indent" style="--lvl:${indent}"></span>
             <span class="error-msg">${loadError.message}</span>
             <button part="retry" class="retry" @click=${() => store.retryLoad(node.id)}>Retry</button>
@@ -151,9 +430,33 @@ export class SpTree<T = unknown> extends LitElement {
     `;
   }
 
+  private _ariaChecked(row: Row<T>): string | typeof nothing {
+    if (this.selection === 'multi') {
+      if (row.checked === 'indeterminate') return 'mixed';
+      return String(row.checked === 'checked');
+    }
+    if (this.selection === 'single') return String(row.selected);
+    return nothing;
+  }
+
+  private _onRowFocus(id: string): () => void {
+    return () => { this._activeId = id; };
+  }
+
+  private _onRowClick(row: Row<T>): void {
+    this._activeId = row.node.id;
+    if (row.node.disabled) return;
+    if (this.selection === 'multi') {
+      this._toggleChecked(row.node);
+    } else if (this.selection === 'single') {
+      this._select(row.node);
+    } else if (row.expandable) {
+      this._toggleExpanded(row);
+    }
+  }
+
   private _renderCheckbox(
-    _id: string,
-    checked: 'checked' | 'unchecked' | 'indeterminate',
+    checked: CheckedState,
     disabled: boolean,
     onClick: () => void,
   ): TemplateResult {
@@ -179,7 +482,6 @@ export class SpTree<T = unknown> extends LitElement {
   }
 
   private _renderRadio(
-    _id: string,
     selected: boolean,
     disabled: boolean,
     onClick: () => void,
@@ -265,6 +567,10 @@ export class SpTree<T = unknown> extends LitElement {
       --sp-tree-panel-shadow: 0 4px 16px rgba(0,0,0,.4);
     }
 
+    [role="tree"] {
+      outline: none;
+    }
+
     .row {
       display: flex;
       align-items: center;
@@ -275,9 +581,13 @@ export class SpTree<T = unknown> extends LitElement {
       cursor: default;
       border-radius: var(--sp-tree-radius);
       transition: background 0.1s;
+      outline: none;
     }
     .row:hover {
       background: var(--sp-tree-bg-hover);
+    }
+    .row:focus-visible {
+      box-shadow: var(--sp-tree-focus-ring);
     }
     .row.selected {
       background: color-mix(in srgb, var(--sp-tree-accent) 12%, transparent);

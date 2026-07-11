@@ -16,6 +16,7 @@
     "dist"
   ],
   "scripts": {
+    "prebuild": "npm run build --workspace=@sp-treeview/core --if-present",
     "build": "vite build",
     "test": "vitest run",
     "lint": "eslint src/"

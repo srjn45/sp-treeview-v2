@@ -1,0 +1,30 @@
+{
+  "name": "@sp-treeview/examples",
+  "version": "4.0.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "description": "Plain-HTML demo, React usage example, and Playwright e2e for sp-treeview v4",
+  "scripts": {
+    "libs": "npm run build --workspace=@sp-treeview/element",
+    "bundle": "node scripts/bundle.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prebuild": "npm run libs",
+    "build": "npm run bundle && npm run typecheck",
+    "pretest": "npm run libs && npm run bundle",
+    "test": "node --import tsx --test e2e/*.e2e.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "esbuild": "^0.25.0",
+    "playwright-core": "1.49.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.0"
+  }
+}

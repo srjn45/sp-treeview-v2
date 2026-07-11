@@ -49,3 +49,8 @@ packages/*/node_modules
 packages/*/dist
 packages/*/coverage
 *.tsbuildinfo
+
+# examples build artifacts
+examples/node_modules
+examples/vendor.js
+examples/test-results

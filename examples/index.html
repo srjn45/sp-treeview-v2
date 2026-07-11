@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sp-treeview v4 — examples</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 24px;
+      max-width: 1100px;
+      background: #f9fafb;
+      color: #111827;
+    }
+    h1 { font-size: 1.4rem; margin: 0 0 4px; }
+    p.lede { color: #6b7280; margin: 0 0 24px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      align-items: start;
+    }
+    section {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 0.8rem;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    sp-tree {
+      display: block;
+      max-width: 420px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px;
+    }
+    sp-tree-select { display: block; max-width: 420px; }
+    .out {
+      margin-top: 12px;
+      font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: #374151;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 1.5em;
+    }
+
+    /* Token-override themed section: restyle a tree purely via --sp-tree-* vars,
+       no shadow-part surgery. Proves full theme overridability from the outside. */
+    section.themed {
+      background: #0f172a;
+      border-color: #1e293b;
+      color: #e2e8f0;
+    }
+    section.themed h2 { color: #94a3b8; }
+    section.themed sp-tree {
+      border-color: #334155;
+      --sp-tree-font-family: "Georgia", serif;
+      --sp-tree-radius: 10px;
+      --sp-tree-row-height: 40px;
+      --sp-tree-fg: #f1f5f9;
+      --sp-tree-fg-muted: #94a3b8;
+      --sp-tree-bg: #111c33;
+      --sp-tree-bg-hover: #1e2a48;
+      --sp-tree-accent: #f59e0b;
+      --sp-tree-accent-fg: #1c1207;
+      --sp-tree-border: #334155;
+      --sp-tree-focus-ring: 0 0 0 2px #f59e0b;
+    }
+  </style>
+</head>
+<body>
+  <h1>sp-treeview v4 — examples</h1>
+  <p class="lede">
+    Framework-free demo: one <code>&lt;sp-tree&gt;</code> and two
+    <code>&lt;sp-tree-select&gt;</code> variants, each with its own store and its
+    own copy of the data. Lazy branches load through a fake 300&nbsp;ms async
+    loader.
+  </p>
+
+  <div class="grid">
+    <section>
+      <h2>Inline &lt;sp-tree&gt; — multi, searchable, lazy</h2>
+      <sp-tree id="inline" selection="multi" cascade searchable></sp-tree>
+      <div class="out" id="inline-out">No selection.</div>
+    </section>
+
+    <section>
+      <h2>&lt;sp-tree-select variant="dropdown"&gt;</h2>
+      <sp-tree-select id="dropdown" variant="dropdown" selection="multi" searchable
+        placeholder="Pick regions…"></sp-tree-select>
+      <div class="out" id="dropdown-out">No selection.</div>
+    </section>
+
+    <section>
+      <h2>&lt;sp-tree-select variant="overlay"&gt;</h2>
+      <sp-tree-select id="overlay" variant="overlay" selection="multi" searchable
+        placeholder="Pick regions…"></sp-tree-select>
+      <div class="out" id="overlay-out">No selection.</div>
+    </section>
+
+    <section class="themed">
+      <h2>Token-override theme (--sp-tree-* only)</h2>
+      <sp-tree id="themed" selection="multi" cascade></sp-tree>
+    </section>
+  </div>
+
+  <script type="module">
+    import { html } from './vendor.js';
+
+    // --- India / USA dataset (loaded) + a couple of lazy branches ----------
+    // A factory so every variant gets an INDEPENDENT deep copy of the data;
+    // view state (checked/expanded/loading) lives in each element's own store,
+    // never on these objects, so the four widgets never leak state into each
+    // other.
+    function makeData() {
+      return [
+        {
+          id: 'india', label: 'India',
+          children: [
+            {
+              id: 'mh', label: 'Maharashtra',
+              children: [
+                { id: 'mum', label: 'Mumbai' },
+                { id: 'pune', label: 'Pune' },
+              ],
+            },
+            {
+              id: 'ka', label: 'Karnataka',
+              children: [
+                { id: 'blr', label: 'Bengaluru' },
+                { id: 'mys', label: 'Mysuru' },
+              ],
+            },
+          ],
+        },
+        {
+          id: 'usa', label: 'USA',
+          children: [
+            {
+              id: 'ca', label: 'California',
+              children: [
+                { id: 'sf', label: 'San Francisco' },
+                { id: 'la', label: 'Los Angeles' },
+              ],
+            },
+            {
+              id: 'ny', label: 'New York',
+              children: [
+                { id: 'nyc', label: 'New York City' },
+              ],
+            },
+          ],
+        },
+        // Lazy branch: children absent + hasChildren:true → resolved on expand.
+        { id: 'canada', label: 'Canada (lazy)', hasChildren: true },
+        // Lazy branch that rejects, to exercise the inline error + retry row.
+        { id: 'atlantis', label: 'Atlantis (lazy, fails)', hasChildren: true },
+      ];
+    }
+
+    // Fresh loader per widget so lazily-attached children are also independent.
+    function makeLoadChildren() {
+      const lazyChildren = {
+        canada: [
+          { id: 'on', label: 'Ontario', children: [
+            { id: 'toronto', label: 'Toronto' },
+            { id: 'ottawa', label: 'Ottawa' },
+          ] },
+          { id: 'qc', label: 'Quebec', children: [
+            { id: 'montreal', label: 'Montreal' },
+          ] },
+        ],
+      };
+      return (node) => new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (node.id === 'atlantis') {
+            reject(new Error('Could not reach Atlantis'));
+            return;
+          }
+          // Deep-clone so the store owns a private copy of the children.
+          const kids = lazyChildren[node.id] ?? [];
+          resolve(JSON.parse(JSON.stringify(kids)));
+        }, 300);
+      });
+    }
+
+    const fmt = (nodes) => nodes.length
+      ? nodes.map(n => n.label).join(', ')
+      : '(none)';
+
+    // --- Inline tree -------------------------------------------------------
+    const inline = document.getElementById('inline');
+    inline.data = makeData();
+    inline.loadChildren = makeLoadChildren();
+    const inlineOut = document.getElementById('inline-out');
+    inline.addEventListener('sp-change', (e) => {
+      inlineOut.textContent =
+        `checked: ${fmt(e.detail.checked)}  |  allSelected: ${e.detail.allSelected}`;
+    });
+
+    // --- Dropdown select ---------------------------------------------------
+    const dropdown = document.getElementById('dropdown');
+    dropdown.data = makeData();
+    dropdown.loadChildren = makeLoadChildren();
+    const dropdownOut = document.getElementById('dropdown-out');
+    dropdown.addEventListener('sp-change', (e) => {
+      dropdownOut.textContent =
+        `checked: ${fmt(e.detail.checked)}  |  allSelected: ${e.detail.allSelected}`;
+    });
+
+    // --- Overlay select ----------------------------------------------------
+    const overlay = document.getElementById('overlay');
+    overlay.data = makeData();
+    overlay.loadChildren = makeLoadChildren();
+    const overlayOut = document.getElementById('overlay-out');
+    overlay.addEventListener('sp-change', (e) => {
+      overlayOut.textContent =
+        `checked: ${fmt(e.detail.checked)}  |  allSelected: ${e.detail.allSelected}`;
+    });
+
+    // --- Themed tree (renderNode kept default; theming is pure CSS tokens) --
+    const themed = document.getElementById('themed');
+    themed.data = makeData();
+    themed.loadChildren = makeLoadChildren();
+
+    // Touch `html` so the demo also shows it is available for custom renderNode
+    // usage without pulling a second Lit copy; keeps the import meaningful.
+    window.__spDemoHtml = html;
+  </script>
+</body>
+</html>

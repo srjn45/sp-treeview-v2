@@ -1,5 +1,5 @@
 import { LitElement, html, css, nothing, type TemplateResult, type PropertyValues } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { TreeStore, type TreeNodeData, type Row, type SelectionMode, type CheckedState } from '@sp-treeview/core';
 
 type RenderNodeFn<T> = (node: TreeNodeData<T>, ctx: { row: Row<T>; store: TreeStore<T> }) => TemplateResult;
@@ -13,6 +13,9 @@ const ALL_ID = '__sp_all__';
 
 /** How long (ms) type-ahead keystrokes accumulate before the buffer resets. */
 const TYPEAHEAD_RESET_MS = 500;
+
+/** Debounce window (ms) between a keystroke in the search box and store.setFilter. */
+const SEARCH_DEBOUNCE_MS = 250;
 
 /** A single navigable row (a data row or the synthetic "All" row). */
 interface NavItem<T> {
@@ -54,6 +57,14 @@ export class SpTree<T = unknown> extends LitElement {
   private _typeBuffer = '';
   private _typeTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // ---- search state ----
+  // _searchValue is the live text in the input; _appliedQuery is the (debounced)
+  // query currently pushed to the store — it drives match highlighting so the
+  // highlight always aligns with the rows the store reports as `matched`.
+  @state() private _searchValue = '';
+  private _appliedQuery = '';
+  private _searchTimer: ReturnType<typeof setTimeout> | null = null;
+
   // ---- lifecycle ----
 
   override disconnectedCallback(): void {
@@ -62,6 +73,10 @@ export class SpTree<T = unknown> extends LitElement {
     if (this._typeTimer !== null) {
       clearTimeout(this._typeTimer);
       this._typeTimer = null;
+    }
+    if (this._searchTimer !== null) {
+      clearTimeout(this._searchTimer);
+      this._searchTimer = null;
     }
   }
 
@@ -96,13 +111,34 @@ export class SpTree<T = unknown> extends LitElement {
         loadChildren: this.loadChildren,
       });
     }
-    this._unsub = this._store.subscribe(() => {
+    this._unsub = this._store.subscribe((e) => {
       this._rows = this._store!.rows();
+      if (e.type === 'load' && e.status === 'error') {
+        this._emitLoadError(e.id);
+      }
       this.requestUpdate();
     });
     this._rows = this._store.rows();
-    // Reset the active row when the underlying store changes.
+    // Reset the active row and any active search when the underlying store changes.
     this._activeId = null;
+    this._resetSearch();
+  }
+
+  /** Clear the search box + applied filter (pending debounce dropped). No store call. */
+  private _resetSearch(): void {
+    if (this._searchTimer !== null) {
+      clearTimeout(this._searchTimer);
+      this._searchTimer = null;
+    }
+    this._searchValue = '';
+    this._appliedQuery = '';
+  }
+
+  private _emitLoadError(id: string): void {
+    const node = this._store?.getNode(id);
+    if (!node) return;
+    const error = this._rows.find(r => r.node.id === id)?.loadError ?? new Error('Load failed');
+    this._dispatch('sp-load-error', { node, error });
   }
 
   private _teardown(): void {
@@ -316,6 +352,47 @@ export class SpTree<T = unknown> extends LitElement {
     this.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }));
   }
 
+  // ---- search ----
+
+  private _onSearchInput(e: Event): void {
+    const value = (e.target as HTMLInputElement).value;
+    this._searchValue = value;
+    if (this._searchTimer !== null) clearTimeout(this._searchTimer);
+    this._searchTimer = setTimeout(() => {
+      this._searchTimer = null;
+      this._applyFilter(value);
+    }, SEARCH_DEBOUNCE_MS);
+  }
+
+  /** Push the (trimmed) query to the store; empty query clears the filter. */
+  private _applyFilter(value: string): void {
+    const query = value.trim();
+    this._appliedQuery = query;
+    if (query) {
+      this._store!.setFilter(query);
+    } else {
+      this._store!.clearFilter();
+    }
+  }
+
+  /**
+   * Clear button: drop any pending debounce, clear the store filter (which
+   * restores the pre-filter expansion snapshot), and refocus the input.
+   */
+  private _onSearchClear(): void {
+    if (this._searchTimer !== null) {
+      clearTimeout(this._searchTimer);
+      this._searchTimer = null;
+    }
+    this._searchValue = '';
+    this._appliedQuery = '';
+    this._store!.clearFilter();
+    this.updateComplete.then(() => {
+      const input = this.shadowRoot?.querySelector<HTMLInputElement>('[part="search-input"]');
+      input?.focus();
+    });
+  }
+
   // ---- rendering ----
 
   override render(): TemplateResult {
@@ -327,6 +404,7 @@ export class SpTree<T = unknown> extends LitElement {
     const rows = this._rows;
 
     return html`
+      ${this.searchable ? this._renderSearch() : nothing}
       <div
         part="tree"
         role="tree"
@@ -336,6 +414,34 @@ export class SpTree<T = unknown> extends LitElement {
         ${this.showAllNode ? this._renderAllRow(store, activeId) : nothing}
         ${rows.map(row => this._renderRow(row, store, activeId))}
         ${rows.length === 0 && !this.showAllNode ? html`<div part="empty" class="empty" role="presentation">No results</div>` : nothing}
+      </div>
+    `;
+  }
+
+  private _renderSearch(): TemplateResult {
+    const hasText = this._searchValue.length > 0;
+    return html`
+      <div part="search" class="search">
+        <input
+          part="search-input"
+          class="search-input"
+          type="text"
+          role="searchbox"
+          aria-label="Search"
+          autocomplete="off"
+          placeholder="Search…"
+          .value=${this._searchValue}
+          @input=${this._onSearchInput}
+        />
+        ${hasText
+          ? html`<button
+              part="search-clear"
+              class="search-clear"
+              type="button"
+              aria-label="Clear search"
+              @click=${this._onSearchClear}
+            >×</button>`
+          : nothing}
       </div>
     `;
   }
@@ -371,7 +477,9 @@ export class SpTree<T = unknown> extends LitElement {
 
     const labelContent = this.renderNode
       ? this.renderNode(node, { row, store })
-      : html`<span part="label" class="label ${row.matched ? 'matched' : ''}">${node.label}</span>`;
+      : html`<span part="label" class="label ${row.matched ? 'matched' : ''}">${
+          row.matched ? this._highlightLabel(node.label) : node.label
+        }</span>`;
 
     return html`
       <div
@@ -428,6 +536,32 @@ export class SpTree<T = unknown> extends LitElement {
           </div>`
         : nothing}
     `;
+  }
+
+  /**
+   * Wrap each case-insensitive occurrence of the applied query in the label
+   * with <mark part="match">. Falls back to the plain label when no query is
+   * applied or a custom matcher (whose match need not be a label substring)
+   * yields no substring hit.
+   */
+  private _highlightLabel(label: string): TemplateResult {
+    const query = this._appliedQuery;
+    if (!query) return html`${label}`;
+    const lower = label.toLowerCase();
+    const needle = query.toLowerCase();
+    const parts: (string | TemplateResult)[] = [];
+    let i = 0;
+    while (i < label.length) {
+      const idx = lower.indexOf(needle, i);
+      if (idx === -1) {
+        parts.push(label.slice(i));
+        break;
+      }
+      if (idx > i) parts.push(label.slice(i, idx));
+      parts.push(html`<mark part="match" class="match">${label.slice(idx, idx + query.length)}</mark>`);
+      i = idx + query.length;
+    }
+    return html`${parts}`;
   }
 
   private _ariaChecked(row: Row<T>): string | typeof nothing {
@@ -569,6 +703,68 @@ export class SpTree<T = unknown> extends LitElement {
 
     [role="tree"] {
       outline: none;
+    }
+
+    /* Search box */
+    .search {
+      display: flex;
+      align-items: center;
+      position: relative;
+      margin-bottom: 4px;
+    }
+    .search-input {
+      flex: 1;
+      min-width: 0;
+      box-sizing: border-box;
+      height: var(--sp-tree-row-height);
+      padding: 0 32px 0 10px;
+      font-family: inherit;
+      font-size: inherit;
+      color: var(--sp-tree-fg);
+      background: var(--sp-tree-bg);
+      border: 1px solid var(--sp-tree-border);
+      border-radius: var(--sp-tree-radius);
+      outline: none;
+    }
+    .search-input::placeholder {
+      color: var(--sp-tree-fg-muted);
+    }
+    .search-input:focus-visible {
+      box-shadow: var(--sp-tree-focus-ring);
+      border-color: var(--sp-tree-accent);
+    }
+    .search-clear {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      font-size: 18px;
+      line-height: 1;
+      color: var(--sp-tree-fg-muted);
+      background: none;
+      border: none;
+      border-radius: var(--sp-tree-radius);
+      cursor: pointer;
+    }
+    .search-clear:hover {
+      color: var(--sp-tree-fg);
+      background: var(--sp-tree-bg-hover);
+    }
+    .search-clear:focus-visible {
+      box-shadow: var(--sp-tree-focus-ring);
+    }
+
+    /* Match highlight */
+    .match {
+      background: color-mix(in srgb, var(--sp-tree-accent) 30%, transparent);
+      color: inherit;
+      border-radius: 2px;
     }
 
     .row {

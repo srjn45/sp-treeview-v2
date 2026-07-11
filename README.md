@@ -1,189 +1,128 @@
-# sp-treeview-v2
-An angular (2/4/5) plugin to display treeview
+# sp-treeview
+
+A framework-agnostic tree view for the web: a **zero-dependency headless state
+engine** plus **native Web Components** you can drop into React, Vue, Svelte,
+Angular, or plain HTML — with a fully overridable theme.
+
+> **v4 is a ground-up rewrite** of the original Angular/Material plugin. The
+> legacy Angular demo under `src/` is **frozen** (see [below](#legacy-angular-demo-frozen)).
+> If you're coming from v3, read the
+> [migration guide](docs/migration-v3-to-v4.md).
+
+## Packages
+
+| Package | What it is |
+|---|---|
+| [`@sp-treeview/core`](packages/core) | Zero-dependency TypeScript state engine (`TreeStore`) — data projection, cascade/indeterminate selection, lazy loading, filtering. Renders nothing. |
+| [`@sp-treeview/element`](packages/element) | Native Web Components `<sp-tree>` (inline) and `<sp-tree-select>` (dropdown/overlay field), built on Lit over the core. |
 
 ## Features
-- Tree view with infinite levels
-- lazy loading (load once/always)
-- treeview input field with dropdown/overlay
-- single-select node with radio button
-- multi-select nodes with checkbox
-- delete node
-- add child node (freedom to create your own form to add child)
-- search the tree
 
-## Demo
+- Tree view with unlimited nesting, rendered as a cheap flat indented list —
+  collapsed/filtered rows are **not in the DOM**.
+- Multi-select (checkbox) with **cascade + indeterminate**, or single-select
+  (radio); optional "All" row.
+- **Lazy loading** with per-node spinners, error rows + retry, staleness guards.
+- **Search/filter** that reveals matches with their ancestors and never triggers
+  lazy loads.
+- Dropdown or overlay **field with removable chips**; form-associated (works in
+  plain `<form>`s).
+- **WAI-ARIA tree pattern**: roles, `aria-*`, roving tabindex, full keyboard nav.
+- **Fully themeable** via `--sp-tree-*` CSS custom properties and `::part()` —
+  light + dark defaults built in. Custom-drawn checkboxes/radios, no Material.
 
-https://srjn45.github.io/#/sp-treeview
-
-## Installation
-
-To install this library, run:
+## Install
 
 ```bash
-$ npm install sp-treeview-v2 --save
+# core only (bring your own UI)
+npm install @sp-treeview/core
+
+# the Web Components (pulls in core, lit, @floating-ui/dom)
+npm install @sp-treeview/element
 ```
 
-## Consuming your library
+> `4.0.0-alpha.0`. Node ≥ 20, ESM only.
 
-Add it in your `AppModule`:
+## Quick start
 
-```typescript
-import { BrowserModule } from '@angular/platform-browser';
-import { NgModule } from '@angular/core';
+```ts
+import '@sp-treeview/element';
+import type { TreeNodeData } from '@sp-treeview/core';
 
-import { AppComponent } from './app.component';
+const data: TreeNodeData[] = [
+  { id: 'india', label: 'India', children: [
+    { id: 'mh', label: 'Maharashtra', children: [{ id: 'mumbai', label: 'Mumbai' }] },
+  ] },
+  { id: 'usa', label: 'USA', hasChildren: true }, // lazy branch
+];
 
-// Import SpTreeviewModule
-import { SpTreeviewModule } from 'sp-treeview-v2';
-
-@NgModule({
-  declarations: [
-    AppComponent
-  ],
-  imports: [
-    BrowserModule,
-
-    // Specify SpTreeviewModule as an import
-    SpTreeviewModule
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
-})
-export class AppModule { }
+const tree = document.querySelector('sp-tree')!;
+tree.data = data;                                  // object inputs are properties
+tree.loadChildren = async (node) =>
+  node.id === 'usa' ? [{ id: 'ca', label: 'California' }] : [];
+tree.addEventListener('sp-change', (e) => {
+  const { checked } = (e as CustomEvent<{ checked: TreeNodeData[] }>).detail;
+  console.log(checked.map((n) => n.label));
+});
 ```
 
-Once sp-treeview-v2 is imported, you can use its components in your Angular application:
-
-```xml
-<!-- You can now use your library component in app.component.html -->
-<h1>
-  {{title}}
-</h1>
-
-<sp-treeview [nodes]="nodes" [config]="config" (change)="onChange($event)" (delete)="onDelete($event)" (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)"></sp-treeview>
-
-or
-
-<sp-treeview-dropdown [placeholder]="'placeholder'" [nodes]="nodes" [config]="config" (delete)="onDelete($event)" (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)" (change)="onChange($event)"></sp-treeview-dropdown>
-
-or
-
-<sp-treeview-overlay [placeholder]="'placeholder'" [nodes]="nodes" [config]="config" (delete)="onDelete($event)" (addChild)="onAddChild($event)" (loadChildren)="onLoadChildren($event)" (change)="onChange($event)"></sp-treeview-overlay>
-
+```html
+<sp-tree selection="multi" searchable></sp-tree>
 ```
 
-```typescript
+Framework usage (React / Vue / plain JS), events, and `::part()` names are in the
+[`@sp-treeview/element` README](packages/element/README.md). The store API and
+its semantics are in the [`@sp-treeview/core` README](packages/core/README.md).
 
-  // app.component.ts
+## Documentation
 
-  nodes: Node[] = [];
-  config: new Config();
+- [Core API reference & semantics](packages/core/README.md)
+- [Web Components: attributes, events, parts, framework usage](packages/element/README.md)
+- [Theming — token table & dark-theme example](docs/theming.md)
+- [Migrating from v3 (Angular) to v4](docs/migration-v3-to-v4.md)
+- [Design spec](docs/specs/2026-07-10-headless-core-web-component.md)
+- Runnable demo: [`examples/index.html`](examples/index.html) (plain HTML, all
+  three variants + a themed section); minimal React usage in
+  [`examples/react.tsx`](examples/react.tsx).
 
-  constructor() {
-    this.nodes = Node.toNodeArray(/*json response from service call*/);
-  }
-
-  onLoadChildren(node: Node) {
-    // service call to load children of node
-    node.loadChildren(Node.toNodeArray(/*response from service call*/));
-  }
-
-  onDelete(node: Node) {
-    // make service call to delete the node
-    // on success
-    node.removeMe(); // issue with removing root node refresh tree until fixed
-    // on failure notify user
-  }
-
-  onAddChild(node: Node) {
-    // create & open form to add new node
-    // onSubmit make a service call
-    // on success response 
-    node.addChild(Node.toNodeArray([/*newly created child node*/])[0]);
-    // on failure response notify user
-  }
-
-  onChange(nodes: Node[]) {
-    // selected nodes can be saved locally and then sent on form submit or directly make the service call.
-  }
+## Repository layout
 
 ```
+packages/core      @sp-treeview/core    — headless state engine
+packages/element   @sp-treeview/element — <sp-tree>, <sp-tree-select>
+examples/          plain-HTML demo, React example, Playwright e2e
+docs/              theming, migration, design spec
+src/, angular.json legacy Angular demo — FROZEN, not part of the build gate
+```
 
-toNodeArray(any[]):Node[] {...} - this method converts simple json object to Node object
+## Develop
 
-## Usage
+```bash
+npm install
+npm run lint      # lint all workspace packages
+npm test          # unit tests (vitest) + e2e
+npm run build     # build core + element + examples (the gate)
+```
 
-- sp-treeview/sp-treeview-dropdown/sp-treeview-overlay takes Node[] and Config as input
-- change event is fired on selection change in case of radio button/checkbox selection, delete and addChild event also fire change event
-- delete event is fired when a node is deleted
-- addChild event is fired to create a child of node
-- loadChildren event is fired everytime(loadOnce=false)/first time(loadonce=true) on click of expand/collapse button
-- expand/collapse button is visible only if children is not null. If the node have children that can be loaded later then set empty array in children. A node with null value in children is treated as a leaf node.
+The root `lint`/`test`/`build` scripts run across the `packages/*` and `examples`
+workspaces. The legacy Angular app is **not** in the gate; build it separately
+with `npm run build:app` if needed.
 
-## Node
+## Legacy Angular demo (FROZEN)
 
-Tree is consist of nodes, each node contains
+The original Angular (2/4/5→21) plugin lives under `src/app/sp-treeview/` and the
+demo app under `src/`. It is **frozen**: kept for reference and history, but it
+receives **no new features and no bug fixes**, and is excluded from the v4 build
+gate. Its verified defects (lazy nodes not rendering, stuck search progress,
+radio selection not persisting, delete-by-`value` deleting siblings) are the
+reason for the v4 rewrite and are fixed in the new packages. New work should use
+`@sp-treeview/core` + `@sp-treeview/element`. See the
+[migration guide](docs/migration-v3-to-v4.md).
 
-- name: string - display text
-- value: any - id or object that uniquily identifies the node
-- children?: Node[]- list of child nodes (null->leaf node, []->lazy load, [node,node,...]-> expand(loadOnce=true) || lazy load(loadOnce=false))
-- progress = false - shows indeterminate progress while loading children 
-- nodeState = new NodeState() - contains the state of node
-- nodeLevelConfig = new NodeLevelConfig() - overrides the tree level config
+## Source & issues
 
-following properties are handled internally
-
-- parent: Node = null - holds the reference to the parent node
-- config: Config - holds reference to the config object for the tree
-- loadChildrenEvent: EventEmitter<Node> - holds the reference to the loadChildren event to load child nodes while searching the tree
-
-## NodeState
-
-- checked = UNCHECKED - checked state(CHECKED/UNCHECKED/INDETERMINATE)
-- collapsed = true - node is expanded(false) or collapsed(true)
-- disabled = false - checkbox/radio is disabled or not
-- hidden = false - show/hide node
-
-## NodeLevelConfig
-
-- deleteNode?: boolean - if null then use tree level config otherwise use this config
-- addChild?: boolean - if null then use tree level config otherwise use this config
-
-## Config
-
-Config is used to show/hide template elements or change functionality
-
-- treeLevelConfig = new TreeLevelConfig() - contains config related to treeview
-- dropdownLevelConfig = new DropdownLevelConfig() - contains config related to dropdown
-
-## TreeLevelConfig
-
-- loadOnce = true - load children once or always on expand/collapse
-- allNode = true - show/hide all node
-- select = SELECT_NONE - (SELECT_NONE/SELECT_RADIO/SELECT_CHECKBOX) what selection method to display
-- deleteNode = false - show/hide delete node button
-- addChild = false - show/hide add child button
-- search = true - show/hide search bar
-
-following properties are handled internally
-
-- progress = false - show/hide search bar progress
-- searchStr = '' - stores the search term
-- treeview: SpTreeviewComponent - holds reference to treeview component
-- loadChildrenStack = [] - keeps record of awaited loadChildren response
-
-## DropdownLevelConfig
-
-- height = 'auto' - hieght of the treeview in dropdown
-- showDropdownDefault = false - show/hide dropdown by default
-
-## Source Code
-
-https://github.com/srjn45/sp-treeview-v2
-
-## Report Issue
-
-https://github.com/srjn45/sp-treeview-v2/issues
+- Source: https://github.com/srjn45/sp-treeview-v2
+- Issues: https://github.com/srjn45/sp-treeview-v2/issues
 
 ## License
 

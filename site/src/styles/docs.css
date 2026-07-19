@@ -1,0 +1,11 @@
+/* Tune Starlight's accent to sp-treeview's emerald so docs match the landing page. */
+:root {
+  --sl-color-accent-low: #0a2b20;
+  --sl-color-accent: #059669;
+  --sl-color-accent-high: #a7f3d0;
+}
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #08241b;
+  --sl-color-accent: #10b981;
+  --sl-color-accent-high: #a7f3d0;
+}

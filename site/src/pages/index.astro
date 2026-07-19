@@ -1,0 +1,291 @@
+---
+import '../styles/landing.css';
+const base = import.meta.env.BASE_URL; // '/sp-treeview-v2/'
+const gh = 'https://github.com/srjn45/sp-treeview-v2';
+
+const values = [
+  ['🧩', 'Any framework', 'Native Web Components — drop <sp-tree> into React, Vue, Svelte, Angular, or plain HTML. No wrapper packages.'],
+  ['🧠', 'Headless core', 'A zero-dependency TypeScript state engine (TreeStore) owns selection, cascade, lazy loading, and filtering. Bring your own UI if you want.'],
+  ['♿', 'Accessible', 'The WAI-ARIA tree pattern, done properly: roles, aria-checked (incl. mixed), roving tabindex, arrow keys, Home/End, type-ahead.'],
+  ['🎨', 'Fully themeable', 'Every visual value is a --sp-tree-* CSS custom property, with ::part() for structure. Light + dark defaults built in.'],
+];
+
+const explore = [
+  ['Quickstart', 'start/quickstart'],
+  ['Plain HTML / JS', 'guides/plain-html'],
+  ['React', 'guides/react'],
+  ['Vue 3', 'guides/vue'],
+  ['Lazy loading', 'guides/lazy-loading'],
+  ['Theming', 'guides/theming'],
+  ['<sp-tree> API', 'reference/sp-tree'],
+  ['TreeStore API', 'reference/tree-store'],
+];
+
+const stacks = [
+  ['📄', 'Plain HTML', 'plain-html', 'One import registers the elements. Set data as a property, listen for sp-change. No build step required.'],
+  ['⚛️', 'React', 'react', 'Use the elements directly in JSX; bind object inputs through a ref. Typed, no wrapper package.'],
+  ['💚', 'Vue 3', 'vue', 'Mark sp-* as custom elements and bind through a template ref. Works with Vite out of the box.'],
+];
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>sp-treeview — tree views for any framework</title>
+    <meta name="description" content="A framework-agnostic tree view for the web: zero-dependency headless state engine plus native Web Components — <sp-tree> and <sp-tree-select> — with cascade selection, lazy loading, search, full keyboard navigation, and a fully overridable theme." />
+    <link rel="icon" href={`${base}favicon.svg`} />
+    <meta property="og:title" content="sp-treeview — tree views for any framework" />
+    <meta property="og:description" content="Headless core + native Web Components: <sp-tree> and <sp-tree-select>. Cascade selection, lazy loading, search, WAI-ARIA, themeable. MIT." />
+    <meta property="og:image" content="https://srjn45.github.io/sp-treeview-v2/og-image.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <!-- ===== nav ===== -->
+    <nav class="nav">
+      <div class="wrap nav-inner">
+        <a class="brand" href={base}><span class="caret">▸</span> sp-treeview</a>
+        <div class="nav-links">
+          <a class="hide-sm" href="#demos">Demos</a>
+          <a class="hide-sm" href="#theming">Theming</a>
+          <a href={`${base}start/what-is-sp-treeview/`}>Docs</a>
+          <a class="hide-sm" href={gh}>GitHub</a>
+          <a class="nav-cta" href={`${base}start/quickstart/`}>Get started</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ===== hero ===== -->
+    <header class="section hero">
+      <div class="wrap">
+        <span class="pill"><span class="dot"></span> v4 · Web Components · MIT · zero-dependency core</span>
+        <h1>Tree views<br /><span class="grad">for any framework.</span></h1>
+        <p class="lede">A headless state engine plus two native custom elements —
+          <code>&lt;sp-tree&gt;</code> and <code>&lt;sp-tree-select&gt;</code> — with cascade
+          selection, lazy loading, search, and full keyboard navigation. Works in React, Vue,
+          Svelte, Angular, and plain HTML.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href={`${base}start/quickstart/`}>Get started →</a>
+          <a class="btn btn-ghost" href="#demos">Try the live demos</a>
+        </div>
+
+        <div class="window">
+          <div class="window-bar">
+            <span class="tl r"></span><span class="tl y"></span><span class="tl g"></span>
+            <span class="tt">&lt;sp-tree selection="multi" cascade searchable&gt; — live</span>
+          </div>
+          <div class="window-body">
+            <sp-tree id="demo-hero" data-theme="dark" selection="multi" cascade searchable></sp-tree>
+            <div class="out" id="demo-hero-out">Loading demo…</div>
+            <p class="hint">This is the real widget — search for <kbd>mu</kbd>, expand
+              <em>Canada (lazy)</em>, or navigate with <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd>
+              <kbd>→</kbd> <kbd>Space</kbd>.</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== value props ===== -->
+    <section class="section" id="features">
+      <div class="wrap">
+        <p class="eyebrow">Why sp-treeview</p>
+        <h2>One tree, everywhere</h2>
+        <p class="lede">v4 is a ground-up rewrite of the original Angular plugin: all view state
+          lives in a store keyed by node id — never mutated onto your data.</p>
+        <div class="grid cols-4" style="margin-top:28px">
+          {values.map(([ico, title, body]) => (
+            <div class="card">
+              <span class="ico">{ico}</span>
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== live demos ===== -->
+    <section class="section" id="demos">
+      <div class="wrap">
+        <p class="eyebrow">Live demos</p>
+        <h2>Experience it — these are the real elements</h2>
+        <p class="lede">Every widget below is the actual published component running in your
+          browser, each with its own store and its own copy of the data.</p>
+
+        <div class="demos" style="margin-top:28px">
+          <!-- dropdown field in a form -->
+          <div class="panel span-6">
+            <div class="panel-title"><h3>Dropdown select field</h3><span class="badge live">form-associated</span></div>
+            <p>A form field whose value is a tree selection — removable chips, embedded search,
+              and a real form value (JSON array of checked ids) via ElementInternals.</p>
+            <form id="demo-form">
+              <sp-tree-select id="demo-dropdown" name="regions" data-theme="dark" variant="dropdown"
+                selection="multi" searchable placeholder="Pick regions…"></sp-tree-select>
+            </form>
+            <div class="out" id="demo-dropdown-out">Open the field and pick a few regions.</div>
+          </div>
+
+          <!-- overlay field -->
+          <div class="panel span-6">
+            <div class="panel-title"><h3>Overlay select field</h3><span class="badge live">variant="overlay"</span></div>
+            <p>The same field as a full-viewport modal sheet — better on small screens. The panel
+              is removed from the DOM while closed: no hidden tab targets.</p>
+            <sp-tree-select id="demo-overlay" data-theme="dark" variant="overlay"
+              selection="multi" searchable placeholder="Pick regions…"></sp-tree-select>
+            <div class="out" id="demo-overlay-out">Open the field — it takes over the viewport.</div>
+          </div>
+
+          <!-- single select -->
+          <div class="panel span-6">
+            <div class="panel-title"><h3>Single select (radio)</h3><span class="badge live">selection="single"</span></div>
+            <p>Exactly one selected node, persisted in the store and reported as
+              <code>detail.selected</code> — the legacy “radio never reached the model” bug is
+              structurally gone.</p>
+            <sp-tree id="demo-single" data-theme="dark" selection="single"></sp-tree>
+            <div class="out" id="demo-single-out">Pick any node.</div>
+          </div>
+
+          <!-- lazy + error -->
+          <div class="panel span-6">
+            <div class="panel-title"><h3>Lazy loading & errors</h3><span class="badge live">loadChildren</span></div>
+            <p>Branches with <code>hasChildren: true</code> load on first expand — with a per-node
+              spinner, and an inline error row with Retry when the loader rejects. Try
+              <em>Atlantis</em>.</p>
+            <sp-tree id="demo-lazy" data-theme="dark" selection="multi" cascade></sp-tree>
+            <div class="out" id="demo-lazy-out">Expand a lazy branch.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== theme playground ===== -->
+    <section class="section" id="theming">
+      <div class="wrap">
+        <p class="eyebrow">Theming</p>
+        <h2>Restyle it without touching the source</h2>
+        <p class="lede">Every color, size, and font flows through a <code>--sp-tree-*</code>
+          custom property; structure is exposed via <code>::part()</code>. Drag the knobs — the
+          CSS below is all it takes.</p>
+
+        <div class="playground" style="margin-top:28px">
+          <div class="controls panel">
+            <div class="control">
+              <label for="pg-accent">Accent</label>
+              <input type="color" id="pg-accent" value="#34d399" />
+            </div>
+            <div class="control">
+              <label for="pg-row-height">Row height <span class="val" id="pg-row-height-val">36px</span></label>
+              <input type="range" id="pg-row-height" min="24" max="48" value="36" />
+            </div>
+            <div class="control">
+              <label for="pg-indent">Indent <span class="val" id="pg-indent-val">20px</span></label>
+              <input type="range" id="pg-indent" min="8" max="40" value="20" />
+            </div>
+            <div class="control">
+              <label for="pg-radius">Radius <span class="val" id="pg-radius-val">4px</span></label>
+              <input type="range" id="pg-radius" min="0" max="16" value="4" />
+            </div>
+            <div class="control">
+              <label for="pg-font">Font</label>
+              <select id="pg-font">
+                <option value="system-ui, sans-serif">system-ui</option>
+                <option value="ui-monospace, SFMono-Regular, Menlo, monospace">monospace</option>
+                <option value="Georgia, serif">serif</option>
+              </select>
+            </div>
+            <div class="control">
+              <label>Mode</label>
+              <div class="seg" id="pg-mode">
+                <button type="button" data-mode="dark" class="active">Dark</button>
+                <button type="button" data-mode="light">Light</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="pg-stage dark" id="pg-stage">
+              <sp-tree id="pg-tree" selection="multi" cascade searchable></sp-tree>
+            </div>
+            <pre class="pg-css" id="pg-css" style="margin-top:14px"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== works with your stack ===== -->
+    <section class="section">
+      <div class="wrap">
+        <p class="eyebrow">Bring your own framework</p>
+        <h2>Standard custom elements — no wrappers</h2>
+        <div class="stacks" style="margin-top:26px">
+          {stacks.map(([ico, title, slug, body]) => (
+            <a class="card stack" href={`${base}guides/${slug}/`} style="color:inherit">
+              <span class="ico">{ico}</span>
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== quickstart ===== -->
+    <section class="section">
+      <div class="wrap">
+        <p class="eyebrow">Quickstart</p>
+        <h2>Up in under a minute</h2>
+<pre class="qs-pre"><span class="muted"># install the Web Components (pulls in the core, lit, @floating-ui/dom)</span>
+npm install @sp-treeview/element
+
+<span class="muted"># markup</span>
+<span class="tag">&lt;sp-tree</span> <span class="attr">selection</span>=<span class="str">"multi"</span> <span class="attr">searchable</span><span class="tag">&gt;&lt;/sp-tree&gt;</span>
+
+<span class="muted"># wire it up — object inputs are DOM properties</span>
+<span class="kw">import</span> <span class="str">'@sp-treeview/element'</span>;
+
+<span class="kw">const</span> tree = document.querySelector(<span class="str">'sp-tree'</span>);
+tree.data = [
+  &lbrace; id: <span class="str">'india'</span>, label: <span class="str">'India'</span>, children: [&lbrace; id: <span class="str">'mum'</span>, label: <span class="str">'Mumbai'</span> &rbrace;] &rbrace;,
+  &lbrace; id: <span class="str">'usa'</span>, label: <span class="str">'USA'</span>, hasChildren: <span class="kw">true</span> &rbrace;,  <span class="muted">// lazy branch</span>
+];
+tree.loadChildren = <span class="kw">async</span> (node) =&gt; [&lbrace; id: <span class="str">'ca'</span>, label: <span class="str">'California'</span> &rbrace;];
+tree.addEventListener(<span class="str">'sp-change'</span>, (e) =&gt;
+  console.log(e.detail.checked.map((n) =&gt; n.label)));</pre>
+        <div class="cta-row" style="justify-content:flex-start;margin-top:24px">
+          <a class="btn btn-primary" href={`${base}start/quickstart/`}>Full quickstart →</a>
+          <a class="btn btn-ghost" href={`${base}start/what-is-sp-treeview/`}>Read the docs</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== explore ===== -->
+    <section class="section">
+      <div class="wrap">
+        <p class="eyebrow">Explore</p>
+        <h2>Documentation</h2>
+        <div class="linkgrid" style="margin-top:24px">
+          {explore.map(([label, slug]) => (
+            <a href={`${base}${slug}/`}>{label}<span class="arw">→</span></a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== footer ===== -->
+    <footer class="foot">
+      <div class="wrap">
+        <a href={`${base}start/what-is-sp-treeview/`}>Docs</a> ·
+        <a href={gh}>GitHub</a> ·
+        <a href={`${gh}/issues`}>Issues</a> ·
+        MIT
+        <p class="fine">sp-treeview v4 — <code>@sp-treeview/core</code> +
+          <code>@sp-treeview/element</code>. The legacy Angular plugin (v3) is frozen; see the
+          <a href={`${base}reference/migration/`}>migration guide</a>.
+          Built by <a href="https://srjn45.github.io/">srjn45</a>.</p>
+      </div>
+    </footer>
+
+    <script>
+      import '../demo/main.js';
+    </script>
+  </body>
+</html>

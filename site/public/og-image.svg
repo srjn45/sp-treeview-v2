@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0d1117"/>
+  <rect width="1200" height="630" fill="url(#g)" opacity="0.5"/>
+  <defs>
+    <radialGradient id="g" cx="80%" cy="0%" r="90%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#0d1117" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- mini tree illustration -->
+  <g transform="translate(120,150)">
+    <path d="M28 40 v300 M28 110 h60 M28 210 h60 M28 310 h60" stroke="#30363d" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <rect x="0" y="0" width="56" height="56" rx="14" fill="#34d399"/>
+    <path d="M14 28 l12 12 20 -22" stroke="#052e22" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="104" y="86" width="48" height="48" rx="12" fill="#2dd4bf"/>
+    <rect x="104" y="186" width="48" height="48" rx="12" fill="#238576"/>
+    <rect x="104" y="286" width="48" height="48" rx="12" fill="none" stroke="#8b949e" stroke-width="8"/>
+  </g>
+  <text x="330" y="270" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="82" font-weight="800" fill="#e6edf3">sp-treeview</text>
+  <text x="334" y="345" font-family="system-ui, sans-serif" font-size="38" fill="#8b949e">Tree views for any framework.</text>
+  <text x="334" y="405" font-family="system-ui, sans-serif" font-size="30" fill="#8b949e">Headless core + native Web Components —</text>
+  <text x="334" y="450" font-family="ui-monospace, Menlo, monospace" font-size="30" fill="#34d399">&lt;sp-tree&gt; · &lt;sp-tree-select&gt;</text>
+  <text x="334" y="520" font-family="system-ui, sans-serif" font-size="26" fill="#6e7681">React · Vue · Svelte · Angular · plain HTML — MIT</text>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 236 32" role="img" aria-label="sp-treeview">
+  <path d="M8 5 v18 M8 12 h9 M8 23 h9" stroke="#4b5563" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <rect x="3" y="1" width="10" height="10" rx="3" fill="#34d399"/>
+  <rect x="19" y="8" width="8" height="8" rx="2.5" fill="#2dd4bf"/>
+  <rect x="19" y="19" width="8" height="8" rx="2.5" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <text x="36" y="22.5" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="19" font-weight="700" fill="#f3f4f6">sp-treeview</text>
+</svg>

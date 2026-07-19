@@ -1,6 +1,6 @@
 {
   "name": "@sp-treeview/examples",
-  "version": "4.0.0-alpha.0",
+  "version": "4.0.0",
   "private": true,
   "type": "module",
   "description": "Plain-HTML demo, React usage example, and Playwright e2e for sp-treeview v4",

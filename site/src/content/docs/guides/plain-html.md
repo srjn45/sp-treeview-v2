@@ -16,8 +16,8 @@ import map:
     { "imports": {
       "lit": "https://esm.sh/lit@3",
       "@floating-ui/dom": "https://esm.sh/@floating-ui/dom@1",
-      "@sp-treeview/core": "https://esm.sh/@sp-treeview/core@4.0.0-alpha.0",
-      "@sp-treeview/element": "https://esm.sh/@sp-treeview/element@4.0.0-alpha.0"
+      "@sp-treeview/core": "https://esm.sh/@sp-treeview/core@4.0.0",
+      "@sp-treeview/element": "https://esm.sh/@sp-treeview/element@4.0.0"
     } }
   </script>
 </head>

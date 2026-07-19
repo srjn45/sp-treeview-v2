@@ -1,7 +1,7 @@
 # @sp-treeview/element
 
 Native **Web Components** for tree selection, built on [Lit](https://lit.dev) over
-the framework-agnostic [`@sp-treeview/core`](../core) state engine. Two custom
+the framework-agnostic [`@sp-treeview/core`](https://www.npmjs.com/package/@sp-treeview/core) state engine. Two custom
 elements:
 
 - **`<sp-tree>`** — an inline, WAI-ARIA tree with checkbox/radio selection, lazy
@@ -11,6 +11,8 @@ elements:
 
 Because they are standard custom elements, they work in **React, Vue, Svelte,
 Angular, plain HTML/JS** — no per-framework wrapper.
+
+**Website, live demos & guides: <https://srjn45.github.io/sp-treeview-v2/>**
 
 ```bash
 npm install @sp-treeview/element
@@ -22,7 +24,7 @@ npm install @sp-treeview/element
 import '@sp-treeview/element';
 ```
 
-> Version `4.0.0-alpha.0`. Node ≥ 20. Ships ESM only.
+> Version `4.0.0`. Node ≥ 20. Ships ESM only.
 
 ---
 
@@ -70,7 +72,7 @@ The multi-mode `sp-change` reports the concrete checked nodes plus
 ### `::part()` names
 
 Style internals from outside the shadow DOM via parts (full list and the CSS
-custom-property tokens are in [docs/theming.md](../../docs/theming.md)):
+custom-property tokens are in [the theming guide](https://srjn45.github.io/sp-treeview-v2/guides/theming/)):
 
 `tree`, `row`, `all-row`, `toggle`, `checkbox`, `radio`, `label`, `match`,
 `spinner`, `error`, `retry`, `search`, `search-input`, `search-clear`, `empty`.
@@ -209,8 +211,8 @@ Plain HTML with an import map (no bundler):
   { "imports": {
     "lit": "https://esm.sh/lit@3",
     "@floating-ui/dom": "https://esm.sh/@floating-ui/dom@1",
-    "@sp-treeview/core": "https://esm.sh/@sp-treeview/core@4.0.0-alpha.0",
-    "@sp-treeview/element": "https://esm.sh/@sp-treeview/element@4.0.0-alpha.0"
+    "@sp-treeview/core": "https://esm.sh/@sp-treeview/core@4.0.0",
+    "@sp-treeview/element": "https://esm.sh/@sp-treeview/element@4.0.0"
   } }
 </script>
 <sp-tree-select id="picker" selection="multi" searchable></sp-tree-select>
@@ -321,7 +323,7 @@ onBeforeUnmount(() => {
 
 Every visual value flows through `--sp-tree-*` CSS custom properties (light + dark
 defaults built in); structural restyling uses `::part()`. See
-[docs/theming.md](../../docs/theming.md) for the full token table and a worked
+[the theming guide](https://srjn45.github.io/sp-treeview-v2/guides/theming/) for the full token table and a worked
 dark-theme override.
 
 ## Accessibility
@@ -333,4 +335,4 @@ Implements the WAI-ARIA tree pattern: `role="tree"`/`treeitem`, `aria-level`,
 
 ## License
 
-MIT. Part of [sp-treeview v4](../../README.md).
+MIT. Part of [sp-treeview v4](https://github.com/srjn45/sp-treeview-v2).

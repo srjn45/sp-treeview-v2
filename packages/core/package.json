@@ -1,6 +1,29 @@
 {
   "name": "@sp-treeview/core",
-  "version": "4.0.0-alpha.0",
+  "version": "4.0.0",
+  "description": "Zero-dependency headless state engine for tree views: data projection, cascade/indeterminate selection, lazy loading, filtering. Renders nothing — bring any UI.",
+  "keywords": [
+    "tree",
+    "treeview",
+    "tree-view",
+    "headless",
+    "state",
+    "checkbox",
+    "cascade",
+    "lazy-loading",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": "Srajan Pathak <srajanpathak45@gmail.com> (https://srjn45.github.io/)",
+  "homepage": "https://srjn45.github.io/sp-treeview-v2/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/srjn45/sp-treeview-v2.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/srjn45/sp-treeview-v2/issues"
+  },
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -8,10 +31,11 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
+  "sideEffects": false,
   "files": [
     "dist"
   ],

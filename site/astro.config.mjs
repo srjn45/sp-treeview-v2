@@ -33,6 +33,8 @@ export default defineConfig({
           { label: 'Plain HTML / JS', slug: 'guides/plain-html' },
           { label: 'React', slug: 'guides/react' },
           { label: 'Vue 3', slug: 'guides/vue' },
+          { label: 'Angular', slug: 'guides/angular' },
+          { label: 'Svelte', slug: 'guides/svelte' },
           { label: 'Lazy loading', slug: 'guides/lazy-loading' },
           { label: 'Search & filtering', slug: 'guides/search-and-filtering' },
           { label: 'The select field', slug: 'guides/tree-select' },

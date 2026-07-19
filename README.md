@@ -17,6 +17,7 @@ Angular, or plain HTML — with a fully overridable theme.
 |---|---|
 | [`@sp-treeview/core`](packages/core) | Zero-dependency TypeScript state engine (`TreeStore`) — data projection, cascade/indeterminate selection, lazy loading, filtering. Renders nothing. |
 | [`@sp-treeview/element`](packages/element) | Native Web Components `<sp-tree>` (inline) and `<sp-tree-select>` (dropdown/overlay field), built on Lit over the core. |
+| [`sp-treeview-v2`](packages/compat) | Compatibility alias (`3.0.0`) for the historical npm name — re-exports the two packages above. |
 
 ## Features
 
@@ -43,7 +44,7 @@ npm install @sp-treeview/core
 npm install @sp-treeview/element
 ```
 
-> `4.0.0-alpha.0`. Node ≥ 20, ESM only.
+> `4.0.0`. Node ≥ 20, ESM only.
 
 ## Quick start
 
@@ -93,6 +94,7 @@ its semantics are in the [`@sp-treeview/core` README](packages/core/README.md).
 ```
 packages/core      @sp-treeview/core    — headless state engine
 packages/element   @sp-treeview/element — <sp-tree>, <sp-tree-select>
+packages/compat    sp-treeview-v2       — compatibility alias for the old npm name
 examples/          plain-HTML demo, React example, Playwright e2e
 docs/              theming, migration, design spec
 site/              promotional website + docs (Astro/Starlight, live demos)

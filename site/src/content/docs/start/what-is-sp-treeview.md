@@ -57,4 +57,4 @@ search progress, radio selection not persisting, delete-by-value deleting
 siblings) are structurally fixed in v4. Coming from v3? Read the
 [migration guide](/sp-treeview-v2/reference/migration/).
 
-> Current version: `4.0.0-alpha.0` · Node ≥ 20 · ESM only · MIT license.
+> Current version: `4.0.0` · Node ≥ 20 · ESM only · MIT license.

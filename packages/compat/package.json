@@ -1,0 +1,47 @@
+{
+  "name": "sp-treeview-v2",
+  "version": "3.0.0",
+  "description": "Compatibility alias for the sp-treeview v4 rewrite — re-exports @sp-treeview/element (<sp-tree>, <sp-tree-select>) and @sp-treeview/core (TreeStore). New projects should install those packages directly.",
+  "keywords": [
+    "tree",
+    "treeview",
+    "tree-view",
+    "tree-select",
+    "web-components",
+    "checkbox",
+    "dropdown"
+  ],
+  "license": "MIT",
+  "author": "Srajan Pathak <srajanpathak45@gmail.com> (https://srjn45.github.io/)",
+  "homepage": "https://srjn45.github.io/sp-treeview-v2/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/srjn45/sp-treeview-v2.git",
+    "directory": "packages/compat"
+  },
+  "bugs": {
+    "url": "https://github.com/srjn45/sp-treeview-v2/issues"
+  },
+  "private": false,
+  "type": "module",
+  "main": "./index.js",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@sp-treeview/core": "^4.0.0",
+    "@sp-treeview/element": "^4.0.0"
+  }
+}

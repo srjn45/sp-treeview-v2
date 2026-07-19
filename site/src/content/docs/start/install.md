@@ -19,7 +19,17 @@ npm install @sp-treeview/core
 ```
 
 > Requirements: Node ≥ 20 for tooling; any evergreen browser at runtime.
-> Both packages are **ESM only**. Current version: `4.0.0-alpha.0`.
+> Both packages are **ESM only**. Current version: `4.0.0`.
+
+## Upgrading from the old `sp-treeview-v2` package?
+
+The historical npm name
+[`sp-treeview-v2`](https://www.npmjs.com/package/sp-treeview-v2) lives on as a
+**compatibility alias**: `sp-treeview-v2@3.0.0` simply re-exports the two
+packages above, so `npm install sp-treeview-v2@3` also gets you the rewrite.
+Versions `≤ 2.2.1` were the frozen Angular plugin — see the
+[migration guide](/sp-treeview-v2/reference/migration/). New projects should
+install the scoped packages directly.
 
 ## Register the elements
 
@@ -39,8 +49,8 @@ Plain HTML pages can load everything from a CDN with an import map:
   { "imports": {
     "lit": "https://esm.sh/lit@3",
     "@floating-ui/dom": "https://esm.sh/@floating-ui/dom@1",
-    "@sp-treeview/core": "https://esm.sh/@sp-treeview/core@4.0.0-alpha.0",
-    "@sp-treeview/element": "https://esm.sh/@sp-treeview/element@4.0.0-alpha.0"
+    "@sp-treeview/core": "https://esm.sh/@sp-treeview/core@4.0.0",
+    "@sp-treeview/element": "https://esm.sh/@sp-treeview/element@4.0.0"
   } }
 </script>
 <script type="module">

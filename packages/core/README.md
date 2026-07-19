@@ -1,7 +1,7 @@
 # @sp-treeview/core
 
 Framework-agnostic, zero-dependency TypeScript state engine for tree views — the
-"headless core" behind [`@sp-treeview/element`](../element). It owns the tree
+"headless core" behind [`@sp-treeview/element`](https://www.npmjs.com/package/@sp-treeview/element). It owns the tree
 data projection, expansion, multi/single selection with cascade + indeterminate
 state, lazy async child loading, and filtering. It renders nothing: you read
 `rows()` and drive it with commands from any framework (React, Vue, Svelte,
@@ -11,11 +11,13 @@ Angular, plain JS) or from a custom renderer.
 - All view state lives **in the store, keyed by node id** — never mutated onto
   your data objects, so two stores can share one immutable data array.
 
+**Website, live demos & guides: <https://srjn45.github.io/sp-treeview-v2/>**
+
 ```bash
 npm install @sp-treeview/core
 ```
 
-> Version `4.0.0-alpha.0`. Node ≥ 20, ES2022 module output.
+> Version `4.0.0`. Node ≥ 20, ES2022 module output.
 
 ---
 
@@ -328,4 +330,4 @@ import {
 
 ## License
 
-MIT. Part of [sp-treeview v4](../../README.md).
+MIT. Part of [sp-treeview v4](https://github.com/srjn45/sp-treeview-v2).

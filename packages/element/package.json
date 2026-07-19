@@ -1,6 +1,31 @@
 {
   "name": "@sp-treeview/element",
-  "version": "4.0.0-alpha.0",
+  "version": "4.0.0",
+  "description": "Native Web Components <sp-tree> and <sp-tree-select>: WAI-ARIA tree, checkbox/radio selection with cascade, lazy loading, search, dropdown field with chips. Works in React, Vue, Svelte, Angular, plain HTML.",
+  "keywords": [
+    "tree",
+    "treeview",
+    "tree-view",
+    "tree-select",
+    "web-components",
+    "custom-elements",
+    "lit",
+    "checkbox",
+    "dropdown",
+    "multiselect",
+    "aria"
+  ],
+  "license": "MIT",
+  "author": "Srajan Pathak <srajanpathak45@gmail.com> (https://srjn45.github.io/)",
+  "homepage": "https://srjn45.github.io/sp-treeview-v2/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/srjn45/sp-treeview-v2.git",
+    "directory": "packages/element"
+  },
+  "bugs": {
+    "url": "https://github.com/srjn45/sp-treeview-v2/issues"
+  },
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -8,8 +33,8 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "files": [
@@ -26,6 +51,7 @@
   },
   "dependencies": {
     "@floating-ui/dom": "^1.6.0",
+    "@sp-treeview/core": "^4.0.0",
     "lit": "^3.0.0"
   },
   "devDependencies": {

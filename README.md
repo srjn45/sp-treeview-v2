@@ -4,6 +4,8 @@ A framework-agnostic tree view for the web: a **zero-dependency headless state
 engine** plus **native Web Components** you can drop into React, Vue, Svelte,
 Angular, or plain HTML — with a fully overridable theme.
 
+**Website & live demos: <https://srjn45.github.io/sp-treeview-v2/>**
+
 > **v4 is a ground-up rewrite** of the original Angular/Material plugin. The
 > legacy Angular demo under `src/` is **frozen** (see [below](#legacy-angular-demo-frozen)).
 > If you're coming from v3, read the
@@ -76,6 +78,7 @@ its semantics are in the [`@sp-treeview/core` README](packages/core/README.md).
 
 ## Documentation
 
+- [Website — live demos, guides, and full reference](https://srjn45.github.io/sp-treeview-v2/)
 - [Core API reference & semantics](packages/core/README.md)
 - [Web Components: attributes, events, parts, framework usage](packages/element/README.md)
 - [Theming — token table & dark-theme example](docs/theming.md)
@@ -92,6 +95,7 @@ packages/core      @sp-treeview/core    — headless state engine
 packages/element   @sp-treeview/element — <sp-tree>, <sp-tree-select>
 examples/          plain-HTML demo, React example, Playwright e2e
 docs/              theming, migration, design spec
+site/              promotional website + docs (Astro/Starlight, live demos)
 src/, angular.json legacy Angular demo — FROZEN, not part of the build gate
 ```
 

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#0d1117"/>
+  <!-- tree connectors -->
+  <path d="M18 18 v28 M18 30 h14 M18 46 h14" stroke="#3d444d" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- root node -->
+  <rect x="11" y="11" width="14" height="14" rx="4" fill="#34d399"/>
+  <path d="M14.5 18 l2.6 2.6 5-5.2" stroke="#052e22" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- child nodes -->
+  <rect x="32" y="24" width="12" height="12" rx="3.5" fill="#2dd4bf"/>
+  <rect x="32" y="40" width="12" height="12" rx="3.5" fill="none" stroke="#8b949e" stroke-width="2.5"/>
+</svg>
